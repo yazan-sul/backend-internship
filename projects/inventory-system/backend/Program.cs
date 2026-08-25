@@ -1,4 +1,5 @@
 using Npgsql;
+using InventorySystem.Endpoints;
 using InventorySystem.Migrations;
 
 // Configure the application and its shared PostgreSQL connection pool.
@@ -9,6 +10,7 @@ var connectionString = builder.Configuration.GetConnectionString("Database")
 
 builder.Services.AddSingleton(NpgsqlDataSource.Create(connectionString));
 builder.Services.AddSingleton<DatabaseInitializer>();
+builder.Services.AddSingleton<ProductRepository>();
 
 var app = builder.Build();
 
@@ -38,5 +40,7 @@ app.MapGet("/api/health", async (NpgsqlDataSource dataSource, CancellationToken 
         }, statusCode: StatusCodes.Status503ServiceUnavailable);
     }
 });
+
+app.MapProductEndpoints();
 
 app.Run();

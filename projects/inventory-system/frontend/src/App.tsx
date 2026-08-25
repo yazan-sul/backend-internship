@@ -1,22 +1,18 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Icon } from "./components/Icon";
+import { getProducts, Product } from "./api/products";
 import "./index.css";
 
-type Product = { id: number; name: string; price: number; quantity: number };
 type FormState = { name: string; price: string; quantity: string };
 type ModalState = { mode: "add" | "edit"; product?: Product };
 
-const initialProducts: Product[] = [
-  { id: 1, name: "Laptop", price: 999.99, quantity: 5 },
-  { id: 2, name: "Wireless Mouse", price: 19.99, quantity: 50 },
-  { id: 3, name: "USB-C Cable", price: 9.99, quantity: 120 },
-  { id: 4, name: "Mechanical Keyboard", price: 129, quantity: 8 },
-];
 const blankForm: FormState = { name: "", price: "", quantity: "" };
 const currency = (value: number) => new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(value);
 
 export function App() {
-  const [products, setProducts] = useState(initialProducts);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [query, setQuery] = useState("");
   const [modal, setModal] = useState<ModalState | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
@@ -29,6 +25,26 @@ export function App() {
   const totalValue = products.reduce((sum, p) => sum + p.price * p.quantity, 0);
   const totalUnits = products.reduce((sum, p) => sum + p.quantity, 0);
   const lowStock = products.filter((p) => p.quantity > 0 && p.quantity < 10).length;
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    async function loadProducts() {
+      try {
+        setIsLoading(true);
+        setLoadError("");
+        setProducts(await getProducts(controller.signal));
+      } catch (cause) {
+        if (cause instanceof DOMException && cause.name === "AbortError") return;
+        setLoadError(cause instanceof Error ? cause.message : "The inventory could not be loaded.");
+      } finally {
+        if (!controller.signal.aborted) setIsLoading(false);
+      }
+    }
+
+    void loadProducts();
+    return () => controller.abort();
+  }, []);
 
   useEffect(() => {
     if (!modal && !deleteTarget) return;
@@ -68,7 +84,7 @@ export function App() {
       <div className="stat-card"><span className="stat-label">Low stock</span><strong className={lowStock ? "warning-number" : ""}>{lowStock}</strong><span className="stat-note">Needs your attention</span></div>
     </section>
     <section className="inventory-panel"><div className="panel-toolbar"><div><h3>All products</h3><p>{query ? `${filtered.length} results for “${query}”` : "Manage your current inventory"}</p></div><label className="search-box"><Icon name="search" size={17} /><span className="sr-only">Search products</span><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search products..." /></label></div>
-      {filtered.length === 0 ? <div className="empty-state"><div className="empty-icon"><Icon name={products.length ? "search" : "box"} size={22} /></div><h3>{products.length ? "No products found" : "Your inventory is empty"}</h3><p>{products.length ? "Try a different search term." : "Add your first product to start tracking stock."}</p>{!products.length && <button className="secondary-button" onClick={openAdd}><Icon name="plus" size={16} /> Add your first product</button>}</div> : <div className="table-wrap"><table><thead><tr><th>Product</th><th>Price</th><th>In stock</th><th>Inventory value</th><th><span className="sr-only">Actions</span></th></tr></thead><tbody>{filtered.map((product) => <tr key={product.id}><td><div className="product-cell"><div className="product-icon"><Icon name="box" size={17} /></div><div><strong>{product.name}</strong><span>SKU-{String(product.id).padStart(4, "0")}</span></div></div></td><td>{currency(product.price)}</td><td><span className={`stock-pill ${product.quantity === 0 ? "out" : product.quantity < 10 ? "low" : "good"}`}><span />{product.quantity === 0 ? "Out of stock" : product.quantity < 10 ? `${product.quantity} left` : `${product.quantity} units`}</span></td><td>{currency(product.price * product.quantity)}</td><td><div className="row-actions"><button className="icon-button" onClick={() => openEdit(product)} aria-label={`Edit ${product.name}`} title="Edit product"><Icon name="edit" size={16} /></button><button className="icon-button danger" onClick={() => setDeleteTarget(product)} aria-label={`Delete ${product.name}`} title="Delete product"><Icon name="trash" size={16} /></button></div></td></tr>)}</tbody></table></div>}
+      {isLoading ? <div className="empty-state" role="status"><div className="empty-icon"><Icon name="spark" size={22} /></div><h3>Loading inventory</h3><p>Retrieving your products from the database.</p></div> : loadError ? <div className="empty-state" role="alert"><div className="empty-icon"><Icon name="close" size={22} /></div><h3>Couldn’t load inventory</h3><p>{loadError}</p></div> : filtered.length === 0 ? <div className="empty-state"><div className="empty-icon"><Icon name={products.length ? "search" : "box"} size={22} /></div><h3>{products.length ? "No products found" : "Your inventory is empty"}</h3><p>{products.length ? "Try a different search term." : "Add your first product to start tracking stock."}</p>{!products.length && <button className="secondary-button" onClick={openAdd}><Icon name="plus" size={16} /> Add your first product</button>}</div> : <div className="table-wrap"><table><thead><tr><th>Product</th><th>Price</th><th>In stock</th><th>Inventory value</th><th><span className="sr-only">Actions</span></th></tr></thead><tbody>{filtered.map((product) => <tr key={product.id}><td><div className="product-cell"><div className="product-icon"><Icon name="box" size={17} /></div><div><strong>{product.name}</strong><span>SKU-{String(product.id).padStart(4, "0")}</span></div></div></td><td>{currency(product.price)}</td><td><span className={`stock-pill ${product.quantity === 0 ? "out" : product.quantity < 10 ? "low" : "good"}`}><span />{product.quantity === 0 ? "Out of stock" : product.quantity < 10 ? `${product.quantity} left` : `${product.quantity} units`}</span></td><td>{currency(product.price * product.quantity)}</td><td><div className="row-actions"><button className="icon-button" onClick={() => openEdit(product)} aria-label={`Edit ${product.name}`} title="Edit product"><Icon name="edit" size={16} /></button><button className="icon-button danger" onClick={() => setDeleteTarget(product)} aria-label={`Delete ${product.name}`} title="Delete product"><Icon name="trash" size={16} /></button></div></td></tr>)}</tbody></table></div>}
     </section><footer className="footer-note"><span><span className="status-dot" /> Inventory is up to date</span><span>Last synced just now</span></footer>
   </div>
   {(modal || deleteTarget) && <div className="modal-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) { closeModal(); setDeleteTarget(null); } }}>
