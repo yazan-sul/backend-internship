@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { Icon } from "./components/Icon";
-import { deleteProduct, getProducts, Product, updateProduct } from "./api/products";
+import { createProduct, deleteProduct, getProducts, Product, updateProduct } from "./api/products";
 import "./index.css";
 
 type FormState = { name: string; price: string; quantity: string };
@@ -85,9 +85,17 @@ export function App() {
       return;
     }
 
-    setProducts((current) => [...current, { id: Date.now(), name, price, quantity }]);
-    showNotice(`${name} was added to inventory`);
-    closeModal();
+    try {
+      setIsSaving(true);
+      const createdProduct = await createProduct({ name, price, quantity });
+      setProducts((current) => [...current, createdProduct]);
+      showNotice(`${name} was added to inventory`);
+      closeModal();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "The product could not be added.");
+    } finally {
+      setIsSaving(false);
+    }
   }
   async function confirmDelete() {
     if (!deleteTarget) return;
