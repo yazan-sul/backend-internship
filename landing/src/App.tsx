@@ -5,6 +5,7 @@ const stack = ["React + TypeScript", "ASP.NET Core", "PostgreSQL", "Docker"];
 const branches = __GIT_BRANCHES__;
 const currentBranch = __CURRENT_BRANCH__;
 const activeProject = __ACTIVE_PROJECT__;
+const projectUrl = `${window.location.protocol}//${window.location.hostname}:5173`;
 
 const healthSchema = z.object({
   services: z.object({
@@ -84,7 +85,7 @@ export function App() {
                 <p className="mt-1 text-xs text-slate-400">Current branch: {currentBranch || "detached HEAD"}</p>
               </div>
               {activeProject ? (
-                <a href={__PROJECT_URL__} className="rounded-lg bg-cyan-400 px-3 py-2 text-sm font-bold text-slate-950 transition hover:bg-cyan-300">
+                <a href={projectUrl} className="rounded-lg bg-cyan-400 px-3 py-2 text-sm font-bold text-slate-950 transition hover:bg-cyan-300">
                   Open project
                 </a>
               ) : (
@@ -101,7 +102,7 @@ export function App() {
               )) : <span className="text-sm text-slate-500">No local branches found.</span>}
             </div>
             <p className="mt-5 text-sm text-slate-400">
-              {activeProject ? `${activeProject} is available at ${__PROJECT_URL__}.` : "Check out a branch with a matching project folder to enable its page."}
+              {activeProject ? `${activeProject} is available at ${projectUrl}.` : "Check out a branch with a matching project folder to enable its page."}
             </p>
           </section>
           <section className="rounded-2xl border border-slate-700 bg-slate-950/60 p-5" aria-labelledby="service-health-heading">

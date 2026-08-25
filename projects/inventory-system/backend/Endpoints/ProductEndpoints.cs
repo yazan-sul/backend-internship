@@ -1,6 +1,8 @@
 using InventorySystem.DTOs;
 using InventorySystem.Migrations;
 using InventorySystem.Models;
+using InventorySystem.Validation;
+using Npgsql;
 
 namespace InventorySystem.Endpoints;
 
@@ -18,9 +20,12 @@ public static class ProductEndpoints
     {
         var products = endpoints.MapGroup("/api/products");
 
-        products.MapGet("", async (ProductRepository repository, CancellationToken cancellationToken) =>
+        products.MapGet("", async (
+            string? search,
+            ProductRepository repository,
+            CancellationToken cancellationToken) =>
         {
-            var productList = await repository.GetAllAsync(cancellationToken);
+            var productList = await repository.GetAllAsync(search, cancellationToken);
             var response = productList.Select(ToResponse).ToList();
             return Results.Ok(response);
         });
@@ -31,6 +36,48 @@ public static class ProductEndpoints
             return product is null
                 ? Results.NotFound(new { message = $"Product with ID {id} was not found." })
                 : Results.Ok(ToResponse(product));
+        });
+
+        products.MapPut("/{id:int}", async (
+            int id,
+            UpdateProductRequest request,
+            ProductRepository repository,
+            CancellationToken cancellationToken) =>
+        {
+            var validationError = ProductValidator.Validate(request);
+            if (validationError is not null)
+            {
+                return Results.BadRequest(new { message = validationError });
+            }
+
+            try
+            {
+                var product = await repository.UpdateAsync(
+                    id,
+                    request.Name!.Trim(),
+                    request.Price,
+                    request.Quantity,
+                    cancellationToken);
+
+                return product is null
+                    ? Results.NotFound(new { message = $"Product with ID {id} was not found." })
+                    : Results.Ok(ToResponse(product));
+            }
+            catch (PostgresException exception) when (exception.SqlState == PostgresErrorCodes.UniqueViolation)
+            {
+                return Results.Conflict(new { message = "Another product already uses this name." });
+            }
+        });
+
+        products.MapDelete("/{id:int}", async (
+            int id,
+            ProductRepository repository,
+            CancellationToken cancellationToken) =>
+        {
+            var deleted = await repository.DeleteAsync(id, cancellationToken);
+            return deleted
+                ? Results.NoContent()
+                : Results.NotFound(new { message = $"Product with ID {id} was not found." });
         });
 
         return endpoints;

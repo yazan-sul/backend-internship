@@ -6,9 +6,6 @@ namespace InventorySystem.Migrations;
 /// <summary>
 /// Encapsulates SQL access for products.
 /// </summary>
-/// <remarks>
-/// Product queries will be implemented here when the product API is added.
-/// </remarks>
 public sealed class ProductRepository
 {
     private readonly NpgsqlDataSource dataSource;
@@ -23,20 +20,24 @@ public sealed class ProductRepository
     }
 
     /// <summary>
-    /// Loads all products from the database.
+    /// Loads all products from the database, optionally filtering by name.
     /// </summary>
     /// <param name="cancellationToken">Token used to cancel the database operation.</param>
     /// <returns>A read-only list of products.</returns>
-    public async Task<IReadOnlyList<Product>> GetAllAsync(CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<Product>> GetAllAsync(
+        string? search = null,
+        CancellationToken cancellationToken = default)
     {
         const string sql = """
             SELECT id, name, price, quantity, created_at, updated_at
             FROM products
+            WHERE $1 = '' OR name ILIKE '%' || $1 || '%'
             ORDER BY id;
             """;
 
         var products = new List<Product>();
         await using var command = dataSource.CreateCommand(sql);
+        command.Parameters.AddWithValue(search?.Trim() ?? string.Empty);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
 
         while (await reader.ReadAsync(cancellationToken))
@@ -63,6 +64,50 @@ public sealed class ProductRepository
 
         await using var command = dataSource.CreateCommand(sql);
         command.Parameters.AddWithValue(id);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+
+        return await reader.ReadAsync(cancellationToken)
+            ? ReadProduct(reader)
+            : null;
+    }
+
+    /// <summary>
+    /// Deletes a product and reports whether a row was removed.
+    /// </summary>
+    public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default)
+    {
+        const string sql = """
+            DELETE FROM products
+            WHERE id = $1;
+            """;
+
+        await using var command = dataSource.CreateCommand(sql);
+        command.Parameters.AddWithValue(id);
+        return await command.ExecuteNonQueryAsync(cancellationToken) == 1;
+    }
+
+    /// <summary>
+    /// Updates an existing product and returns its persisted values.
+    /// </summary>
+    public async Task<Product?> UpdateAsync(
+        int id,
+        string name,
+        decimal price,
+        int quantity,
+        CancellationToken cancellationToken = default)
+    {
+        const string sql = """
+            UPDATE products
+            SET name = $2, price = $3, quantity = $4, updated_at = CURRENT_TIMESTAMP
+            WHERE id = $1
+            RETURNING id, name, price, quantity, created_at, updated_at;
+            """;
+
+        await using var command = dataSource.CreateCommand(sql);
+        command.Parameters.AddWithValue(id);
+        command.Parameters.AddWithValue(name);
+        command.Parameters.AddWithValue(price);
+        command.Parameters.AddWithValue(quantity);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
 
         return await reader.ReadAsync(cancellationToken)
