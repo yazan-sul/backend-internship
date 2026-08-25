@@ -69,7 +69,7 @@ export function App() {
 
   useEffect(() => {
     void loadWorkspace();
-    const interval = window.setInterval(() => void loadWorkspace(), 1000);
+    const interval = window.setInterval(() => void loadWorkspace(), 10000);
     return () => window.clearInterval(interval);
   }, [loadWorkspace]);
 
