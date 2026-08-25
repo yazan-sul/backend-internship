@@ -196,7 +196,7 @@ async function startWorkspaceServices(
       if (started.exitCode !== 0) runtime.lastError = "Could not start the project database.";
     }
 
-    const project = Bun.spawn(["bun", "run", "dev"], {
+    const project = Bun.spawn(["bun", "run", "--no-orphans", "dev"], {
       cwd: projectDirectory,
       stdin: "inherit",
       stdout: "inherit",
@@ -226,7 +226,7 @@ async function startWorkspaceServices(
     throw new Error("Could not install landing page dependencies.");
   }
 
-  const landing = Bun.spawn(["bun", "run", "--cwd", "landing", "dev"], {
+  const landing = Bun.spawn(["bun", "run", "--no-orphans", "--cwd", "landing", "dev"], {
     cwd: repositoryRoot,
     stdin: "inherit",
     stdout: "inherit",
@@ -245,10 +245,23 @@ async function startWorkspaceServices(
 
 async function stopWorkspaceServices(workspace: RunningWorkspace) {
   for (const service of workspace.services) service.kill("SIGTERM");
-  await Promise.allSettled(workspace.services.map((service) => service.exited));
+  const gracefulShutdown = Promise.allSettled(workspace.services.map((service) => service.exited));
+  const exitedGracefully = await Promise.race([
+    gracefulShutdown.then(() => true),
+    Bun.sleep(5000).then(() => false),
+  ]);
+
+  if (!exitedGracefully) {
+    console.warn("Services did not stop within 5 seconds; forcing shutdown...");
+    for (const service of workspace.services) {
+      if (service.exitCode === null) service.kill("SIGKILL");
+    }
+    await Promise.race([gracefulShutdown, Bun.sleep(2000)]);
+  }
+
   if (workspace.databaseStarted && workspace.projectDirectory) {
     console.log("Stopping the project PostgreSQL service...");
-    Bun.spawnSync(["docker", "compose", "stop", "db"], {
+    Bun.spawnSync(["docker", "compose", "stop", "--timeout", "2", "db"], {
       cwd: workspace.projectDirectory,
       stdin: "inherit",
       stdout: "inherit",
@@ -260,7 +273,7 @@ async function stopWorkspaceServices(workspace: RunningWorkspace) {
 export async function runCurrentProject(projectsDirectory = resolve(import.meta.dir, "..", "projects")) {
   const projectDirectory = await findCurrentProject(projectsDirectory);
   console.log(`Starting ${basename(projectDirectory)}...`);
-  const child = Bun.spawn(["bun", "run", "dev"], {
+  const child = Bun.spawn(["bun", "run", "--no-orphans", "dev"], {
     cwd: projectDirectory,
     stdin: "inherit",
     stdout: "inherit",
