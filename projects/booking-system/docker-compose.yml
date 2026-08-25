@@ -1,0 +1,14 @@
+services:
+  backend:
+    build: ./backend
+    container_name: booking-system-backend
+    environment:
+      ASPNETCORE_URLS: http://+:8080
+      Booking__DataDirectory: /app/data
+    ports: ["5080:8080"]
+    volumes: ["./data:/app/data"]
+  frontend:
+    build: ./frontend
+    container_name: booking-system-frontend
+    ports: ["5173:5173"]
+    depends_on: [backend]

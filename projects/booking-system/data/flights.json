@@ -1,0 +1,38 @@
+[
+  {
+    "id": "6dee612c-7a14-4804-aa2b-f9f13fa99d0f",
+    "code": "SB101",
+    "departureCountry": "Jordan",
+    "destinationCountry": "France",
+    "departureAirport": "AMM",
+    "arrivalAirport": "CDG",
+    "departureAt": "2026-09-06T15:38:08.140217Z",
+    "economyPrice": 220,
+    "businessPrice": 580,
+    "firstPrice": 1100,
+    "economyCapacity": 80,
+    "businessCapacity": 12,
+    "firstCapacity": 4,
+    "economyRemaining": 80,
+    "businessRemaining": 12,
+    "firstRemaining": 4
+  },
+  {
+    "id": "5c7b43c4-2c5e-4085-ba82-645e40e22863",
+    "code": "SB202",
+    "departureCountry": "Jordan",
+    "destinationCountry": "Italy",
+    "departureAirport": "AMM",
+    "arrivalAirport": "FCO",
+    "departureAt": "2026-09-14T15:38:08.140286Z",
+    "economyPrice": 180,
+    "businessPrice": 450,
+    "firstPrice": 900,
+    "economyCapacity": 90,
+    "businessCapacity": 10,
+    "firstCapacity": 2,
+    "economyRemaining": 90,
+    "businessRemaining": 10,
+    "firstRemaining": 2
+  }
+]
