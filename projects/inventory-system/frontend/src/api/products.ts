@@ -55,9 +55,6 @@ export async function deleteProduct(id: number): Promise<void> {
 export async function updateProduct(id: number, input: Pick<Product, "name" | "price" | "quantity">): Promise<Product> {
   const response = await fetch(`/api/products/${id}`, {
     method: "PUT",
-export async function updateProduct(id: number, input: Pick<Product, "name" | "price" | "quantity">): Promise<Product> {
-  const response = await fetch(`/api/products/${id}`, {
-    method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
   });
