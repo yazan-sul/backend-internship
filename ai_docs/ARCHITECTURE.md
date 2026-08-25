@@ -12,6 +12,14 @@ Root scripts must not mention a concrete project. `bun run dev` executes `script
 
 Zero matching directories is valid on `main`; `bun run dev` still serves the landing page. A project directory left over from another branch is never activated because its name does not match the checked-out branch.
 
+## Local workspace control
+
+During `bun run dev`, a Bun control server binds only to `127.0.0.1:5090`. The landing page reads live branch/worktree state from it. A branch-switch request is accepted only from the local landing origin, must name an existing local branch, and is rejected if Git reports any staged, unstaged, or untracked changes.
+
+For an accepted request, the supervisor stops services it owns, performs `git switch <branch>` without force, starts the matching project stack, waits for the backend and frontend to become reachable, restarts the landing server, and reports readiness so the existing browser page can redirect. It never commits, stashes, resets, cleans, or discards files.
+
+This control plane is local-development-only. It must not be exposed, containerized, or deployed. Production landing pages should link to independently deployed project URLs instead of manipulating Git.
+
 ## Project boundary
 
 Each `projects/<name>` directory owns:

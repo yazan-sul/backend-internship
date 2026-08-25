@@ -38,3 +38,4 @@ docs: explain local database setup
 
 Never mix a generic scaffold change with project business functionality.
 
+Before using the landing page branch switcher, make the worktree clean by committing or manually stashing changes. Never modify the switcher to use force checkout, reset, clean, or automatic stashing.
