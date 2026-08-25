@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Icon } from "./components/Icon";
-import { getProducts, Product } from "./api/products";
+import { createProduct, getProducts, Product } from "./api/products";
 import "./index.css";
 
 type FormState = { name: string; price: string; quantity: string };
@@ -19,6 +19,7 @@ export function App() {
   const [form, setForm] = useState(blankForm);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const nameInput = useRef<HTMLInputElement>(null);
 
   const filtered = useMemo(() => products.filter((p) => p.name.toLowerCase().includes(query.trim().toLowerCase())), [products, query]);
@@ -61,16 +62,25 @@ export function App() {
   function closeModal() { setModal(null); setError(""); }
   function setField(field: keyof FormState, value: string) { setForm((current) => ({ ...current, [field]: value })); if (error) setError(""); }
 
-  function submit(event: FormEvent) {
+  async function submit(event: FormEvent) {
     event.preventDefault();
     const name = form.name.trim(); const price = Number(form.price); const quantity = Number(form.quantity);
     if (!name) return setError("Enter a product name.");
     if (!Number.isFinite(price) || price < 0) return setError("Enter a valid, non-negative price.");
     if (!Number.isInteger(quantity) || quantity < 0) return setError("Enter a valid, non-negative quantity.");
-    if (products.some((p) => p.name.toLowerCase() === name.toLowerCase() && p.id !== modal?.product?.id)) return setError("Another product already uses this name.");
-    if (modal?.mode === "edit" && modal.product) { setProducts((current) => current.map((p) => p.id === modal.product?.id ? { ...p, name, price, quantity } : p)); showNotice(`${name} was updated`); }
-    else { setProducts((current) => [...current, { id: Date.now(), name, price, quantity }]); showNotice(`${name} was added to inventory`); }
-    closeModal();
+    if (modal?.mode === "edit" && modal.product) { setProducts((current) => current.map((p) => p.id === modal.product?.id ? { ...p, name, price, quantity } : p)); showNotice(`${name} was updated`); closeModal(); return; }
+
+    try {
+      setIsSubmitting(true);
+      const createdProduct = await createProduct({ name, price, quantity });
+      setProducts((current) => [...current, createdProduct]);
+      showNotice(`${name} was added to inventory`);
+      closeModal();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "The product could not be added.");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
   function confirmDelete() { if (!deleteTarget) return; const name = deleteTarget.name; setProducts((current) => current.filter((p) => p.id !== deleteTarget.id)); setDeleteTarget(null); showNotice(`${name} was removed`); }
 
@@ -88,7 +98,7 @@ export function App() {
     </section><footer className="footer-note"><span><span className="status-dot" /> Inventory is up to date</span><span>Last synced just now</span></footer>
   </div>
   {(modal || deleteTarget) && <div className="modal-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) { closeModal(); setDeleteTarget(null); } }}>
-    {modal && <div className="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-title"><div className="modal-heading"><div><p className="eyebrow accent">{modal.mode === "add" ? "New item" : "Update item"}</p><h2 id="modal-title">{modal.mode === "add" ? "Add product" : "Edit product"}</h2></div><button className="close-button" onClick={closeModal} aria-label="Close dialog"><Icon name="close" size={18} /></button></div><form onSubmit={submit}><div className="field"><label htmlFor="product-name">Product name</label><input id="product-name" ref={nameInput} value={form.name} onChange={(e) => setField("name", e.target.value)} placeholder="e.g. Desk lamp" /></div><div className="form-row"><div className="field"><label htmlFor="product-price">Price</label><div className="input-prefix"><span>$</span><input id="product-price" type="number" step="0.01" min="0" value={form.price} onChange={(e) => setField("price", e.target.value)} placeholder="0.00" /></div></div><div className="field"><label htmlFor="product-quantity">Quantity</label><input id="product-quantity" type="number" min="0" step="1" value={form.quantity} onChange={(e) => setField("quantity", e.target.value)} placeholder="0" /></div></div>{error && <p className="form-error" role="alert">{error}</p>}<div className="modal-actions"><button type="button" className="secondary-button" onClick={closeModal}>Cancel</button><button type="submit" className="primary-button">{modal.mode === "add" ? "Add product" : "Save changes"}</button></div></form></div>}
+    {modal && <div className="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-title"><div className="modal-heading"><div><p className="eyebrow accent">{modal.mode === "add" ? "New item" : "Update item"}</p><h2 id="modal-title">{modal.mode === "add" ? "Add product" : "Edit product"}</h2></div><button className="close-button" onClick={closeModal} aria-label="Close dialog"><Icon name="close" size={18} /></button></div><form onSubmit={submit}><div className="field"><label htmlFor="product-name">Product name</label><input id="product-name" ref={nameInput} value={form.name} onChange={(e) => setField("name", e.target.value)} placeholder="e.g. Desk lamp" /></div><div className="form-row"><div className="field"><label htmlFor="product-price">Price</label><div className="input-prefix"><span>$</span><input id="product-price" type="number" step="0.01" min="0" value={form.price} onChange={(e) => setField("price", e.target.value)} placeholder="0.00" /></div></div><div className="field"><label htmlFor="product-quantity">Quantity</label><input id="product-quantity" type="number" min="0" step="1" value={form.quantity} onChange={(e) => setField("quantity", e.target.value)} placeholder="0" /></div></div>{error && <p className="form-error" role="alert">{error}</p>}<div className="modal-actions"><button type="button" className="secondary-button" onClick={closeModal}>Cancel</button><button type="submit" className="primary-button" disabled={isSubmitting}>{isSubmitting ? "Adding..." : modal.mode === "add" ? "Add product" : "Save changes"}</button></div></form></div>}
     {deleteTarget && <div className="modal-card confirm-card" role="dialog" aria-modal="true" aria-labelledby="delete-title"><div className="confirm-icon"><Icon name="trash" size={21} /></div><h2 id="delete-title">Remove {deleteTarget.name}?</h2><p>This product will be removed from your inventory. This action can’t be undone.</p><div className="modal-actions"><button className="secondary-button" onClick={() => setDeleteTarget(null)}>Keep product</button><button className="delete-button" onClick={confirmDelete}>Remove product</button></div></div>}
   </div>}{notice && <div className="toast" role="status"><span className="toast-check"><Icon name="check" size={14} /></span>{notice}</div>}</main>;
 }

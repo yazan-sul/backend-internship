@@ -1,6 +1,8 @@
 using InventorySystem.DTOs;
 using InventorySystem.Migrations;
 using InventorySystem.Models;
+using InventorySystem.Validation;
+using Npgsql;
 
 namespace InventorySystem.Endpoints;
 
@@ -17,6 +19,25 @@ public static class ProductEndpoints
     public static IEndpointRouteBuilder MapProductEndpoints(this IEndpointRouteBuilder endpoints)
     {
         var products = endpoints.MapGroup("/api/products");
+
+        products.MapPost("", async (CreateProductRequest request, ProductRepository repository, CancellationToken cancellationToken) =>
+        {
+            var validationError = ProductValidator.Validate(request);
+            if (validationError is not null)
+            {
+                return Results.BadRequest(new { message = validationError });
+            }
+
+            try
+            {
+                var product = await repository.CreateAsync(request, cancellationToken);
+                return Results.Created($"/api/products/{product.Id}", ToResponse(product));
+            }
+            catch (PostgresException exception) when (exception.SqlState == PostgresErrorCodes.UniqueViolation)
+            {
+                return Results.Conflict(new { message = "Another product already uses this name." });
+            }
+        });
 
         products.MapGet("", async (ProductRepository repository, CancellationToken cancellationToken) =>
         {

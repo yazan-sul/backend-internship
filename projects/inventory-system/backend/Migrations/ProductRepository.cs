@@ -1,4 +1,5 @@
 using Npgsql;
+using InventorySystem.DTOs;
 using InventorySystem.Models;
 
 namespace InventorySystem.Migrations;
@@ -20,6 +21,31 @@ public sealed class ProductRepository
     public ProductRepository(NpgsqlDataSource dataSource)
     {
         this.dataSource = dataSource;
+    }
+
+    /// <summary>
+    /// Persists a new product and returns the database-generated product record.
+    /// </summary>
+    public async Task<Product> CreateAsync(CreateProductRequest request, CancellationToken cancellationToken = default)
+    {
+        const string sql = """
+            INSERT INTO products (name, price, quantity)
+            VALUES ($1, $2, $3)
+            RETURNING id, name, price, quantity, created_at, updated_at;
+            """;
+
+        await using var command = dataSource.CreateCommand(sql);
+        command.Parameters.AddWithValue(request.Name!.Trim());
+        command.Parameters.AddWithValue(request.Price);
+        command.Parameters.AddWithValue(request.Quantity);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+
+        if (!await reader.ReadAsync(cancellationToken))
+        {
+            throw new InvalidOperationException("The product was not created.");
+        }
+
+        return ReadProduct(reader);
     }
 
     /// <summary>
