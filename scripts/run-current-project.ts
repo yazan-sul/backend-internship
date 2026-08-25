@@ -165,6 +165,15 @@ function killProcessGroup(service: Bun.Subprocess, signal: NodeJS.Signals) {
   }
 }
 
+function composeHasService(composeFile: string, service: string, cwd: string) {
+  const result = Bun.spawnSync(["docker", "compose", "-f", composeFile, "config", "--services"], {
+    cwd,
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  return result.exitCode === 0 && result.stdout?.toString().split("\n").some((name) => name.trim() === service);
+}
+
 async function startWorkspaceServices(
   repositoryRoot: string,
   runtime: WorkspaceRuntime,
@@ -186,7 +195,7 @@ async function startWorkspaceServices(
     console.log(`Starting ${activeProject}...`);
 
     const composeFile = resolve(projectDirectory, "docker-compose.yml");
-    if (await Bun.file(composeFile).exists()) {
+    if (await Bun.file(composeFile).exists() && composeHasService(composeFile, "db", projectDirectory)) {
       const compose = ["docker", "compose", "-f", composeFile];
       const running = Bun.spawnSync([...compose, "ps", "--status", "running", "--quiet", "db"], {
         cwd: projectDirectory,
