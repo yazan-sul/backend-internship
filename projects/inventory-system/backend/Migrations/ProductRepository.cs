@@ -6,9 +6,6 @@ namespace InventorySystem.Migrations;
 /// <summary>
 /// Encapsulates SQL access for products.
 /// </summary>
-/// <remarks>
-/// Product queries will be implemented here when the product API is added.
-/// </remarks>
 public sealed class ProductRepository
 {
     private readonly NpgsqlDataSource dataSource;
@@ -63,6 +60,35 @@ public sealed class ProductRepository
 
         await using var command = dataSource.CreateCommand(sql);
         command.Parameters.AddWithValue(id);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+
+        return await reader.ReadAsync(cancellationToken)
+            ? ReadProduct(reader)
+            : null;
+    }
+
+    /// <summary>
+    /// Updates an existing product and returns its persisted values.
+    /// </summary>
+    public async Task<Product?> UpdateAsync(
+        int id,
+        string name,
+        decimal price,
+        int quantity,
+        CancellationToken cancellationToken = default)
+    {
+        const string sql = """
+            UPDATE products
+            SET name = $2, price = $3, quantity = $4, updated_at = CURRENT_TIMESTAMP
+            WHERE id = $1
+            RETURNING id, name, price, quantity, created_at, updated_at;
+            """;
+
+        await using var command = dataSource.CreateCommand(sql);
+        command.Parameters.AddWithValue(id);
+        command.Parameters.AddWithValue(name);
+        command.Parameters.AddWithValue(price);
+        command.Parameters.AddWithValue(quantity);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
 
         return await reader.ReadAsync(cancellationToken)
