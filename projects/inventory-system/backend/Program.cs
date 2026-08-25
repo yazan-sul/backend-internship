@@ -1,14 +1,21 @@
 using Npgsql;
+using InventorySystem.Migrations;
 
+// Configure the application and its shared PostgreSQL connection pool.
 var builder = WebApplication.CreateBuilder(args);
 
 var connectionString = builder.Configuration.GetConnectionString("Database")
     ?? throw new InvalidOperationException("ConnectionStrings:Database is required.");
 
 builder.Services.AddSingleton(NpgsqlDataSource.Create(connectionString));
+builder.Services.AddSingleton<DatabaseInitializer>();
 
 var app = builder.Build();
 
+// Apply local schema migrations before accepting requests.
+await app.Services.GetRequiredService<DatabaseInitializer>().ApplyAsync();
+
+// Keep this endpoint lightweight so it can be used by Docker and local development checks.
 app.MapGet("/api/health", async (NpgsqlDataSource dataSource, CancellationToken cancellationToken) =>
 {
     try
