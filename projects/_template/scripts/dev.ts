@@ -2,17 +2,27 @@ export {};
 
 const frontendPort = process.env.PROJECT_FRONTEND_PORT ?? "5173";
 
+function killProcessGroup(child: Bun.Subprocess, signal: NodeJS.Signals) {
+  try {
+    process.kill(-child.pid, signal);
+  } catch {
+    child.kill(signal);
+  }
+}
+
 const processes = [
   Bun.spawn(["dotnet", "watch", "--no-hot-reload", "run", "--project", "backend/ProjectTemplate.csproj"], {
     stdin: "inherit",
     stdout: "inherit",
     stderr: "inherit",
     env: { ...process.env, ASPNETCORE_ENVIRONMENT: "Development" },
+    detached: true,
   }),
   Bun.spawn(["bun", "run", "--no-orphans", "--cwd", "frontend", "dev", "--", "--port", frontendPort, "--strictPort"], {
     stdin: "inherit",
     stdout: "inherit",
     stderr: "inherit",
+    detached: true,
   }),
 ];
 
@@ -20,8 +30,8 @@ let stopping: Promise<void> | undefined;
 function stop() {
   if (stopping) return stopping;
   stopping = (async () => {
-    processes[0].kill("SIGINT");
-    processes[1].kill("SIGTERM");
+    killProcessGroup(processes[0], "SIGINT");
+    killProcessGroup(processes[1], "SIGTERM");
 
     const gracefulShutdown = Promise.allSettled(processes.map((process) => process.exited));
     const exitedGracefully = await Promise.race([
@@ -31,7 +41,7 @@ function stop() {
 
     if (!exitedGracefully) {
       for (const process of processes) {
-        if (process.exitCode === null) process.kill("SIGKILL");
+        if (process.exitCode === null) killProcessGroup(process, "SIGKILL");
       }
       await Promise.race([gracefulShutdown, Bun.sleep(2000)]);
     }
