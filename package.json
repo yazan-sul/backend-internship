@@ -1,0 +1,18 @@
+{
+  "name": "backend-internship",
+  "private": true,
+  "scripts": {
+    "dev": "bun run scripts/run-current-project.ts",
+    "dev:landing": "bun run scripts/dev-landing.ts",
+    "build:landing": "bun run --cwd landing build",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit && bun run --cwd projects/_template typecheck"
+  },
+  "engines": {
+    "bun": ">=1.3.0"
+  },
+  "devDependencies": {
+    "@types/bun": "1.3.14",
+    "typescript": "latest"
+  }
+}
