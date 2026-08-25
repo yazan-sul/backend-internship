@@ -20,20 +20,24 @@ public sealed class ProductRepository
     }
 
     /// <summary>
-    /// Loads all products from the database.
+    /// Loads all products from the database, optionally filtering by name.
     /// </summary>
     /// <param name="cancellationToken">Token used to cancel the database operation.</param>
     /// <returns>A read-only list of products.</returns>
-    public async Task<IReadOnlyList<Product>> GetAllAsync(CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<Product>> GetAllAsync(
+        string? search = null,
+        CancellationToken cancellationToken = default)
     {
         const string sql = """
             SELECT id, name, price, quantity, created_at, updated_at
             FROM products
+            WHERE $1 = '' OR name ILIKE '%' || $1 || '%'
             ORDER BY id;
             """;
 
         var products = new List<Product>();
         await using var command = dataSource.CreateCommand(sql);
+        command.Parameters.AddWithValue(search?.Trim() ?? string.Empty);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
 
         while (await reader.ReadAsync(cancellationToken))
@@ -65,6 +69,21 @@ public sealed class ProductRepository
         return await reader.ReadAsync(cancellationToken)
             ? ReadProduct(reader)
             : null;
+    }
+
+    /// <summary>
+    /// Deletes a product and reports whether a row was removed.
+    /// </summary>
+    public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default)
+    {
+        const string sql = """
+            DELETE FROM products
+            WHERE id = $1;
+            """;
+
+        await using var command = dataSource.CreateCommand(sql);
+        command.Parameters.AddWithValue(id);
+        return await command.ExecuteNonQueryAsync(cancellationToken) == 1;
     }
 
     /// <summary>

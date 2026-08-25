@@ -20,9 +20,12 @@ public static class ProductEndpoints
     {
         var products = endpoints.MapGroup("/api/products");
 
-        products.MapGet("", async (ProductRepository repository, CancellationToken cancellationToken) =>
+        products.MapGet("", async (
+            string? search,
+            ProductRepository repository,
+            CancellationToken cancellationToken) =>
         {
-            var productList = await repository.GetAllAsync(cancellationToken);
+            var productList = await repository.GetAllAsync(search, cancellationToken);
             var response = productList.Select(ToResponse).ToList();
             return Results.Ok(response);
         });
@@ -64,6 +67,17 @@ public static class ProductEndpoints
             {
                 return Results.Conflict(new { message = "Another product already uses this name." });
             }
+        });
+
+        products.MapDelete("/{id:int}", async (
+            int id,
+            ProductRepository repository,
+            CancellationToken cancellationToken) =>
+        {
+            var deleted = await repository.DeleteAsync(id, cancellationToken);
+            return deleted
+                ? Results.NoContent()
+                : Results.NotFound(new { message = $"Product with ID {id} was not found." });
         });
 
         return endpoints;
