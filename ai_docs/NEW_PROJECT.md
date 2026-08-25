@@ -37,7 +37,7 @@ Replace `<project-name>` with a lowercase-kebab-case name such as `inventory-app
    ls projects
    ```
 
-7. Start PostgreSQL, then start the frontend and backend together from root.
+7. Start PostgreSQL, then start the landing page, frontend, and backend together from root.
 
    ```sh
    cd projects/<project-name>
@@ -48,6 +48,6 @@ Replace `<project-name>` with a lowercase-kebab-case name such as `inventory-app
 
    Alternatively, run `bun run docker:up` inside the project directory for the entire containerized stack.
 
-8. Verify `http://localhost:5173` and its **Check API** button. Run `bun test` at root and `bun run build` inside the project before committing.
+8. Open the landing page at `http://localhost:5174`, confirm the current branch is highlighted, and use **Open project** to reach the project at `http://localhost:5173`. Verify the health check, then run `bun test` at root and `bun run build` inside the project before committing.
 
 Do not edit the root detector to add the project name. The directory is discovered automatically, which is what keeps branch switching safe.

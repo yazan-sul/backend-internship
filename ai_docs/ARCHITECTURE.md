@@ -2,15 +2,15 @@
 
 ## Branch-per-project model
 
-`main` is the reusable starting point. It contains no business project: only repository tooling, documentation, the landing page, and `projects/_template`. A new project gets a dedicated lowercase-kebab-case branch and a copy of the template at `projects/<project-name>`.
+`main` is the reusable starting point. It contains no committed business project: only repository tooling, documentation, the landing page, and `projects/_template`. A new project gets a dedicated lowercase-kebab-case branch and a copy of the template at `projects/<project-name>`.
 
-An active project branch must contain exactly one project directory besides `_template`. Project files, dependencies, database configuration, and Docker configuration stay inside that directory. This isolation prevents branch-specific configuration from leaking into the shared scaffold or another branch.
+An active project branch must contain a project directory whose name exactly matches the branch. Project files, dependencies, database configuration, and Docker configuration stay inside that directory. This isolation prevents branch-specific configuration from leaking into the shared scaffold or another branch.
 
 ## Generic root
 
-Root scripts must not mention a concrete project. `bun run dev` executes `scripts/run-current-project.ts`, which scans `projects/`, ignores `_template` and hidden entries, and requires exactly one remaining directory. It then runs that directory's local `bun run dev` with the project directory as the working directory.
+Root scripts must not mention a concrete project. `bun run dev` executes `scripts/run-current-project.ts`, reads the current Git branch, and scans `projects/` while ignoring `_template` and hidden entries. The landing page always starts on port `5174`. If `projects/<current-branch>` exists, its PostgreSQL Compose service and local development command also start, with its frontend on its conventional port `5173` and backend using port `5080`.
 
-Zero active directories is valid on `main`, but `bun run dev` exits with guidance because there is no application to start. More than one is always an error because project selection would be ambiguous.
+Zero matching directories is valid on `main`; `bun run dev` still serves the landing page. A project directory left over from another branch is never activated because its name does not match the checked-out branch.
 
 ## Project boundary
 
@@ -28,10 +28,11 @@ Projects must not import files from `_template`, `landing`, another project, or 
 
 ```text
 root bun run dev
-  -> detect projects/<only-active-project>
-  -> project predev installs its frontend workspace
-  -> project dev starts dotnet watch + Vite
-  -> Vite proxies /api to ASP.NET Core
+  -> read local branches and the checked-out branch
+  -> always start landing on :5174
+  -> when projects/<current-branch> exists, run its local dev command
+  -> start that project's PostgreSQL Compose service
+  -> project frontend starts on :5173 and proxies /api to ASP.NET Core on :5080
   -> ASP.NET Core accesses PostgreSQL directly through Npgsql
 ```
 

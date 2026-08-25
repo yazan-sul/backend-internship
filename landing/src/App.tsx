@@ -2,6 +2,9 @@ import { useCallback, useEffect, useState } from "react";
 import { z } from "zod";
 
 const stack = ["React + TypeScript", "ASP.NET Core", "PostgreSQL", "Docker"];
+const branches = __GIT_BRANCHES__;
+const currentBranch = __CURRENT_BRANCH__;
+const activeProject = __ACTIVE_PROJECT__;
 
 const healthSchema = z.object({
   services: z.object({
@@ -31,11 +34,18 @@ function ServiceStatus({ name, state }: { name: string; state: ServiceState }) {
 }
 
 export function App() {
-  const [backend, setBackend] = useState<ServiceState>("checking");
-  const [postgresql, setPostgresql] = useState<ServiceState>("checking");
+  const initialState: ServiceState = activeProject ? "checking" : "unavailable";
+  const [backend, setBackend] = useState<ServiceState>(initialState);
+  const [postgresql, setPostgresql] = useState<ServiceState>(initialState);
   const [lastChecked, setLastChecked] = useState<string>();
 
   const checkHealth = useCallback(async () => {
+    if (!activeProject) {
+      setBackend("unavailable");
+      setPostgresql("unavailable");
+      return;
+    }
+
     setBackend("checking");
     setPostgresql("checking");
 
@@ -66,13 +76,43 @@ export function App() {
         <div className="mt-12 flex flex-wrap gap-3">
           {stack.map((item) => <span key={item} className="rounded-full border border-slate-700 bg-slate-900/80 px-4 py-2 text-sm text-slate-200">{item}</span>)}
         </div>
-        <section className="mt-12 max-w-xl rounded-2xl border border-slate-700 bg-slate-950/60 p-5" aria-labelledby="service-health-heading">
+        <div className="mt-12 grid gap-6 lg:grid-cols-2">
+          <section className="rounded-2xl border border-slate-700 bg-slate-950/60 p-5" aria-labelledby="branches-heading">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 id="branches-heading" className="text-lg font-bold">Project branches</h2>
+                <p className="mt-1 text-xs text-slate-400">Current branch: {currentBranch || "detached HEAD"}</p>
+              </div>
+              {activeProject ? (
+                <a href={__PROJECT_URL__} className="rounded-lg bg-cyan-400 px-3 py-2 text-sm font-bold text-slate-950 transition hover:bg-cyan-300">
+                  Open project
+                </a>
+              ) : (
+                <button disabled className="cursor-not-allowed rounded-lg bg-slate-800 px-3 py-2 text-sm font-bold text-slate-500">
+                  Open project
+                </button>
+              )}
+            </div>
+            <div className="mt-5 flex flex-wrap gap-2">
+              {branches.length > 0 ? branches.map((branch) => (
+                <span key={branch} className={`rounded-full border px-3 py-1.5 text-sm ${branch === currentBranch ? "border-cyan-400 bg-cyan-400/10 text-cyan-200" : "border-slate-700 bg-slate-900 text-slate-400"}`}>
+                  {branch}
+                </span>
+              )) : <span className="text-sm text-slate-500">No local branches found.</span>}
+            </div>
+            <p className="mt-5 text-sm text-slate-400">
+              {activeProject ? `${activeProject} is available at ${__PROJECT_URL__}.` : "Check out a branch with a matching project folder to enable its page."}
+            </p>
+          </section>
+          <section className="rounded-2xl border border-slate-700 bg-slate-950/60 p-5" aria-labelledby="service-health-heading">
           <div className="mb-4 flex items-center justify-between gap-4">
             <div>
               <h2 id="service-health-heading" className="text-lg font-bold">Local service health</h2>
-              <p className="mt-1 text-xs text-slate-400">{lastChecked ? `Last checked at ${lastChecked}` : "Checking services…"}</p>
+              <p className="mt-1 text-xs text-slate-400">
+                {!activeProject ? "No active project on this branch" : lastChecked ? `Last checked at ${lastChecked}` : "Checking services…"}
+              </p>
             </div>
-            <button className="rounded-lg border border-cyan-400/60 px-3 py-2 text-sm font-semibold text-cyan-300 transition hover:bg-cyan-400/10 disabled:cursor-wait disabled:opacity-60" onClick={() => void checkHealth()} disabled={backend === "checking" || postgresql === "checking"}>
+            <button className="rounded-lg border border-cyan-400/60 px-3 py-2 text-sm font-semibold text-cyan-300 transition hover:bg-cyan-400/10 disabled:cursor-not-allowed disabled:opacity-60" onClick={() => void checkHealth()} disabled={!activeProject || backend === "checking" || postgresql === "checking"}>
               Check again
             </button>
           </div>
@@ -80,7 +120,8 @@ export function App() {
             <ServiceStatus name="Backend API" state={backend} />
             <ServiceStatus name="PostgreSQL" state={postgresql} />
           </div>
-        </section>
+          </section>
+        </div>
       </section>
     </main>
   );

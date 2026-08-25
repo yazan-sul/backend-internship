@@ -1,6 +1,6 @@
 # Backend Internship Monorepo
 
-This repository is a generic foundation for independent internship projects. `main` contains this scaffold, the landing page, documentation, and `projects/_template`. Each project is developed on its own branch and has exactly one active folder under `projects/` in addition to `_template`.
+This repository is a generic foundation for independent internship projects. `main` contains this scaffold, the landing page, documentation, and `projects/_template`. Each project is developed on its own branch and has one matching folder under `projects/` in addition to `_template`.
 
 ## Start a project
 
@@ -10,9 +10,9 @@ Follow [`ai_docs/NEW_PROJECT.md`](ai_docs/NEW_PROJECT.md), then run:
 bun run dev
 ```
 
-The root command discovers the branch's only active project and delegates to its local development script. That script installs frontend packages and starts Vite plus `dotnet watch`. Start PostgreSQL first with `bun run db:up` from the project directory, or run the entire stack with `bun run docker:up`.
+The root command always starts the landing page at `http://localhost:5174`. When the checked-out branch has a matching `projects/<branch-name>` directory, it also starts that project's PostgreSQL service, frontend at `http://localhost:5173`, and backend at `http://localhost:5080`. The landing page lists local branches and enables **Open project** for the matching checked-out project. Press Ctrl+C to stop the processes and any database started by this command.
 
-Run the generic landing page with:
+To run the generic landing demo with the template backend and database instead, use:
 
 ```sh
 bun run dev:landing
