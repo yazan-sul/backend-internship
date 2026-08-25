@@ -10,15 +10,17 @@ Follow [`ai_docs/NEW_PROJECT.md`](ai_docs/NEW_PROJECT.md), then run:
 bun run dev
 ```
 
-The root command always starts the landing page at `http://localhost:5174`. When the checked-out branch has a matching `projects/<branch-name>` directory, it also starts that project's PostgreSQL service, frontend at `http://localhost:5173`, and backend at `http://localhost:5080`. The landing page lists local branches and enables **Open project** for the matching checked-out project. Press Ctrl+C to stop the processes and any database started by this command.
+The root command always starts the landing page at `http://localhost:5174`. When the checked-out branch has a matching `projects/<branch-name>` directory, it also starts that project's PostgreSQL service, frontend at `http://localhost:5173`, and backend at `http://localhost:5080`. Press Ctrl+C to stop the processes and any database started by this command.
 
-To run the generic landing demo with the template backend and database instead, use:
+The landing page includes a local-only branch switcher. **Switch & open** asks the workspace supervisor on `127.0.0.1:5090` to stop current services, run a safe `git switch`, start the target project, and redirect when it is ready. Switching is disabled whenever the worktree contains staged, unstaged, or untracked changes. Commit or stash first; the launcher never forces a switch or discards work.
+
+`dev:landing` is retained as an alias for the same workspace launcher:
 
 ```sh
 bun run dev:landing
 ```
 
-This one command starts the template PostgreSQL service, template backend, and landing Vite server. The landing page checks `http://localhost:5080/api/health` through its Vite proxy and displays separate Backend API and PostgreSQL statuses. Press Ctrl+C to stop the frontend and backend; PostgreSQL is also stopped if this command started it.
+The branch switcher is a development tool and is not available in production builds. Every project branch must contain the shared launcher and landing changes for the dashboard to remain available after switching.
 
 ## Repository rules
 

@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "dev": "bun run scripts/run-current-project.ts",
-    "dev:landing": "bun run scripts/dev-landing.ts",
+    "dev:landing": "bun run dev",
     "build:landing": "bun run --cwd landing build",
     "test": "bun test",
     "typecheck": "tsc --noEmit && bun run --cwd projects/_template typecheck"
