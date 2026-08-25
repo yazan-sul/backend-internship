@@ -11,6 +11,12 @@ public sealed record ProductResponse(
     DateTimeOffset CreatedAt,
     DateTimeOffset UpdatedAt);
 
+public sealed record ProductPageResponse(
+    IReadOnlyList<ProductResponse> Items,
+    int TotalCount,
+    int Page,
+    int PageSize);
+
 /// <summary>
 /// Contains the fields required to create a product.
 /// </summary>

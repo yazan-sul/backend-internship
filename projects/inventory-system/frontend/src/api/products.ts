@@ -7,19 +7,36 @@ export type Product = {
   updatedAt?: string;
 };
 
+export type ProductSortField = "name" | "price" | "quantity" | "inventoryValue";
+export type SortDirection = "asc" | "desc";
+
+export type ProductPage = {
+  items: Product[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+};
+
 /**
  * Loads all products currently persisted by the inventory API.
  */
-export async function getProducts(search = "", signal?: AbortSignal): Promise<Product[]> {
+export async function getProducts(
+  search = "",
+  options: { page?: number; pageSize?: number; sortBy?: ProductSortField; sortDirection?: SortDirection; signal?: AbortSignal } = {},
+): Promise<ProductPage> {
   const params = new URLSearchParams();
   if (search.trim()) params.set("search", search.trim());
-  const response = await fetch(`/api/products${params.size ? `?${params}` : ""}`, { signal });
+  params.set("page", String(options.page ?? 1));
+  params.set("pageSize", String(options.pageSize ?? 10));
+  params.set("sortBy", options.sortBy ?? "name");
+  params.set("sortDirection", options.sortDirection ?? "asc");
+  const response = await fetch(`/api/products${params.size ? `?${params}` : ""}`, { signal: options.signal });
 
   if (!response.ok) {
     throw new Error("The inventory could not be loaded.");
   }
 
-  return response.json() as Promise<Product[]>;
+  return response.json() as Promise<ProductPage>;
 }
 
 export async function createProduct(input: { name: string; price: number; quantity: number }): Promise<Product> {

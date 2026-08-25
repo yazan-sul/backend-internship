@@ -41,12 +41,27 @@ public static class ProductEndpoints
 
         products.MapGet("", async (
             string? search,
+            int? page,
+            int? pageSize,
+            string? sortBy,
+            string? sortDirection,
             ProductRepository repository,
             CancellationToken cancellationToken) =>
         {
-            var productList = await repository.GetAllAsync(search, cancellationToken);
-            var response = productList.Select(ToResponse).ToList();
-            return Results.Ok(response);
+            var currentPage = Math.Max(page ?? 1, 1);
+            var currentPageSize = Math.Clamp(pageSize ?? 10, 1, 100);
+            var result = await repository.GetPageAsync(
+                search,
+                currentPage,
+                currentPageSize,
+                sortBy ?? "name",
+                sortDirection ?? "asc",
+                cancellationToken);
+            return Results.Ok(new ProductPageResponse(
+                result.Items.Select(ToResponse).ToList(),
+                result.TotalCount,
+                currentPage,
+                currentPageSize));
         });
 
         products.MapGet("/{id:int}", async (int id, ProductRepository repository, CancellationToken cancellationToken) =>

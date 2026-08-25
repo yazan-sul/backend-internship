@@ -45,32 +45,50 @@ public sealed class ProductRepository
         return ReadProduct(reader);
     }
 
-    /// Loads all products from the database, optionally filtering by name.
+    /// Loads one sorted and paginated product page from the database.
     /// </summary>
     /// <param name="cancellationToken">Token used to cancel the database operation.</param>
     /// <returns>A read-only list of products.</returns>
-    public async Task<IReadOnlyList<Product>> GetAllAsync(
+    public async Task<(IReadOnlyList<Product> Items, int TotalCount)> GetPageAsync(
         string? search = null,
+        int page = 1,
+        int pageSize = 10,
+        string sortBy = "name",
+        string sortDirection = "asc",
         CancellationToken cancellationToken = default)
     {
-        const string sql = """
-            SELECT id, name, price, quantity, created_at, updated_at
+        var orderBy = sortBy.ToLowerInvariant() switch
+        {
+            "price" => "price",
+            "quantity" => "quantity",
+            "inventoryvalue" => "price * quantity",
+            _ => "name",
+        };
+        var direction = sortDirection.Equals("desc", StringComparison.OrdinalIgnoreCase) ? "DESC" : "ASC";
+        var offset = (page - 1) * pageSize;
+        var sql = $"""
+            SELECT id, name, price, quantity, created_at, updated_at, COUNT(*) OVER() AS total_count
             FROM products
             WHERE $1 = '' OR name ILIKE '%' || $1 || '%'
-            ORDER BY id;
+            ORDER BY {orderBy} {direction}, id ASC
+            LIMIT $2 OFFSET $3;
             """;
 
         var products = new List<Product>();
         await using var command = dataSource.CreateCommand(sql);
         command.Parameters.AddWithValue(search?.Trim() ?? string.Empty);
+        command.Parameters.AddWithValue(pageSize);
+        command.Parameters.AddWithValue(offset);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
 
+        var totalCount = 0;
         while (await reader.ReadAsync(cancellationToken))
         {
             products.Add(ReadProduct(reader));
+            totalCount = reader.GetInt32(6);
         }
 
-        return products;
+        return (products, totalCount);
     }
 
     /// <summary>
