@@ -16,4 +16,4 @@ Package versions are recorded by lockfiles after install. Root retains the reque
 
 Do not add an ORM, authentication, or a reverse proxy to the scaffold. These are project decisions.
 
-For local development, Vite listens on `5173`, ASP.NET Core on `5080`, and the PostgreSQL container is exposed on host port `55432` to avoid collisions with an existing local PostgreSQL installation. PostgreSQL continues to listen on `5432` inside the Compose network. A project may change host ports within its own directory if necessary.
+For root development, the landing Vite server listens on `5174`, the active project's Vite server on `5173`, and ASP.NET Core on `5080`. The PostgreSQL container is exposed on host port `55432` to avoid collisions with an existing local PostgreSQL installation. PostgreSQL continues to listen on `5432` inside the Compose network. A project may change host ports within its own directory if necessary.

@@ -101,3 +101,67 @@ A working file tree matching the structure above, with the root detection script
 - Complete architecture, stack, conventions, and project setup documentation.
 - Root bun.lockb plus project-specific lockfiles.
 - Clear zero-project and multi-project errors.
+
+## Use a prompt like this:
+
+Create a new internship project in:
+
+/Users/yazansulaiman/Documents/backend-internship
+
+Project name: inventory-app
+Branch name: inventory-app
+Database: PostgreSQL
+
+Follow ai_docs/NEW_PROJECT.md and all repository conventions.
+
+Create the project by copying projects/\_template into projects/inventory-app.
+Rename all template identifiers, namespaces, package names, database names,
+Docker container names, volume names, and backend project files appropriately.
+
+Keep the project fully self-contained. Do not add an ORM, authentication,
+or a reverse proxy.
+
+Project requirements:
+
+- [Describe the application here]
+- [List the required API endpoints]
+- [Describe the database tables]
+- [Describe the frontend pages/forms]
+
+After implementation:
+
+- Run type-checks, tests, and production builds.
+- Validate Docker Compose.
+- Verify bun run dev starts the frontend and backend.
+- Verify the health check reports the backend and PostgreSQL as healthy.
+
+For example:
+
+Create a new internship project in:
+
+/Users/yazansulaiman/Documents/backend-internship
+
+Project name: task-manager
+Branch name: task-manager
+Database: PostgreSQL
+
+Follow ai_docs/NEW_PROJECT.md and all repository conventions.
+
+Build a task-management application where users can:
+
+- Create tasks
+- List all tasks
+- Mark tasks as completed
+- Delete tasks
+
+Use React, TypeScript, Tailwind, Zod, ASP.NET Core, Npgsql, and raw
+parameterized SQL. Do not use an ORM or authentication.
+
+Create the required PostgreSQL schema and REST endpoints. Keep everything
+inside projects/task-manager.
+
+Run all type-checks, tests, builds, and Docker verification when finished.
+
+Then the new project should run from the repository root with:
+
+bun run dev

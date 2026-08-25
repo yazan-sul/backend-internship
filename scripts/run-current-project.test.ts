@@ -2,7 +2,7 @@ import { afterEach, describe, expect, test } from "bun:test";
 import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { findCurrentProject } from "./run-current-project";
+import { findCurrentProject, selectActiveProject } from "./run-current-project";
 
 const temporaryDirectories: string[] = [];
 
@@ -18,6 +18,11 @@ afterEach(async () => {
 });
 
 describe("current project detection", () => {
+  test("activates only the project matching the checked-out branch", () => {
+    expect(selectActiveProject(["inventory-system"], "inventory-system")).toBe("inventory-system");
+    expect(selectActiveProject(["inventory-system"], "main")).toBeUndefined();
+  });
+
   test("ignores the template and selects the branch project", async () => {
     const projects = await projectsFixture("_template", "inventory-app");
     expect(await findCurrentProject(projects)).toBe(join(projects, "inventory-app"));

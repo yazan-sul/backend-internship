@@ -1,5 +1,7 @@
 export {};
 
+const frontendPort = process.env.PROJECT_FRONTEND_PORT ?? "5173";
+
 const processes = [
   Bun.spawn(["dotnet", "watch", "--no-hot-reload", "run", "--project", "backend/ProjectTemplate.csproj"], {
     stdin: "inherit",
@@ -7,7 +9,7 @@ const processes = [
     stderr: "inherit",
     env: { ...process.env, ASPNETCORE_ENVIRONMENT: "Development" },
   }),
-  Bun.spawn(["bun", "run", "--cwd", "frontend", "dev"], {
+  Bun.spawn(["bun", "run", "--cwd", "frontend", "dev", "--", "--port", frontendPort, "--strictPort"], {
     stdin: "inherit",
     stdout: "inherit",
     stderr: "inherit",
