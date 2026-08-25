@@ -157,6 +157,14 @@ async function waitUntilReachable(urls: string[], process?: Bun.Subprocess) {
   return false;
 }
 
+function killProcessGroup(service: Bun.Subprocess, signal: NodeJS.Signals) {
+  try {
+    process.kill(-service.pid, signal);
+  } catch {
+    service.kill(signal);
+  }
+}
+
 async function startWorkspaceServices(
   repositoryRoot: string,
   runtime: WorkspaceRuntime,
@@ -202,6 +210,7 @@ async function startWorkspaceServices(
       stdout: "inherit",
       stderr: "inherit",
       env: process.env,
+      detached: true,
     });
     services.push(project);
     runtime.projectReady = await waitUntilReachable(
@@ -237,6 +246,7 @@ async function startWorkspaceServices(
       OPEN_BROWSER: openBrowser ? "true" : "false",
       VITE_WORKSPACE_CONTROL_URL: `http://${CONTROL_HOST}:${CONTROL_PORT}`,
     },
+    detached: true,
   });
   services.push(landing);
   runtime.landingReady = await waitUntilReachable([LANDING_URL], landing);
@@ -244,7 +254,7 @@ async function startWorkspaceServices(
 }
 
 async function stopWorkspaceServices(workspace: RunningWorkspace) {
-  for (const service of workspace.services) service.kill("SIGTERM");
+  for (const service of workspace.services) killProcessGroup(service, "SIGTERM");
   const gracefulShutdown = Promise.allSettled(workspace.services.map((service) => service.exited));
   const exitedGracefully = await Promise.race([
     gracefulShutdown.then(() => true),
@@ -254,7 +264,7 @@ async function stopWorkspaceServices(workspace: RunningWorkspace) {
   if (!exitedGracefully) {
     console.warn("Services did not stop within 5 seconds; forcing shutdown...");
     for (const service of workspace.services) {
-      if (service.exitCode === null) service.kill("SIGKILL");
+      if (service.exitCode === null) killProcessGroup(service, "SIGKILL");
     }
     await Promise.race([gracefulShutdown, Bun.sleep(2000)]);
   }
@@ -278,9 +288,10 @@ export async function runCurrentProject(projectsDirectory = resolve(import.meta.
     stdin: "inherit",
     stdout: "inherit",
     stderr: "inherit",
+    detached: true,
   });
-  process.once("SIGINT", () => child.kill("SIGINT"));
-  process.once("SIGTERM", () => child.kill("SIGTERM"));
+  process.once("SIGINT", () => killProcessGroup(child, "SIGINT"));
+  process.once("SIGTERM", () => killProcessGroup(child, "SIGTERM"));
   return child.exited;
 }
 
