@@ -44,10 +44,9 @@ var repository = app.Services.GetRequiredService<PostgresRepository>();
 
 await migrations.ApplyAsync();
 
-if (!(await repository.GetFlightsAsync()).Any())
-{
-    await repository.SeedFlightsAsync(SeedData.Flights());
-}
+// Seeding is additive. The repository ignores duplicate flight codes, so new
+// demo flights are added to existing local databases without touching bookings.
+await repository.SeedFlightsAsync(SeedData.Flights());
 
 app
     .MapHealthEndpoints()

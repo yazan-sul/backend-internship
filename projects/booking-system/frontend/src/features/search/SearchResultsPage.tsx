@@ -40,6 +40,10 @@ export function SearchResultsPage({
       "https://images.unsplash.com/photo-1603565816030-6b389eeb23cb?auto=format&fit=crop&w=900&q=80",
     Germany:
       "https://images.unsplash.com/photo-1467269204594-9661b134dd2b?auto=format&fit=crop&w=900&q=80",
+    Turkey:
+      "https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?auto=format&fit=crop&w=900&q=80",
+    "United Arab Emirates":
+      "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=900&q=80",
   };
 
   const getCountryImage = (country: string) =>
@@ -170,6 +174,7 @@ function FlightCard({
   flight: Flight;
   onBook: (flight: Flight, className: string, price: number) => Promise<void>;
 }) {
+  const [expanded, setExpanded] = useState(false);
   const [selectedClass, setSelectedClass] = useState<
     "economy" | "business" | "first" | null
   >(null);
@@ -191,7 +196,12 @@ function FlightCard({
 
   return (
     <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:border-slate-300 hover:shadow-md">
-      <div className="flex flex-wrap items-start justify-between gap-5 p-5 pb-4">
+      <button
+        type="button"
+        aria-expanded={expanded}
+        onClick={() => setExpanded((current) => !current)}
+        className="group flex w-full flex-wrap items-start justify-between gap-5 p-5 text-left transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-cyan-200"
+      >
         <div>
           <div className="flex items-center gap-3">
             <p className="text-sm font-bold text-cyan-700">{flight.code}</p>
@@ -207,14 +217,24 @@ function FlightCard({
             {date(flight.departureAt)}
           </p>
         </div>
-        <p className="text-right text-xs font-semibold uppercase tracking-wide text-slate-400">
-          Select a fare
-          <span className="mt-1 block normal-case font-normal tracking-normal">
-            You’ll review before booking
+        <span className="flex items-center gap-3 self-center text-right text-xs font-semibold uppercase tracking-wide text-slate-400">
+          {expanded ? "Hide fares" : "View fares"}
+          <span
+            aria-hidden="true"
+            className={`flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-lg text-slate-500 shadow-sm transition-transform duration-200 group-hover:border-cyan-300 group-hover:text-cyan-600 ${expanded ? "rotate-180" : ""}`}
+          >
+            ↓
           </span>
-        </p>
-      </div>
-      <div className="grid gap-3 px-5 pb-5 sm:grid-cols-3">
+        </span>
+      </button>
+      {expanded && (
+        <>
+          <div className="border-t border-slate-100 px-5 pt-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+              Choose a fare · You’ll review before booking
+            </p>
+          </div>
+          <div className="grid gap-3 px-5 pb-5 pt-3 sm:grid-cols-3">
         {(["economy", "business", "first"] as const).map((classKey) => (
           <button
             type="button"
@@ -269,6 +289,8 @@ function FlightCard({
           {isBooking ? "Booking…" : "Book this fare"}
         </button>
       </div>
+        </>
+      )}
     </article>
   );
 }
