@@ -1,26 +1,7 @@
 import { useEffect, useState } from "react";
 import { z } from "zod";
-
-const flightSchema = z.object({
-  id: z.string(),
-  code: z.string(),
-  departureCountry: z.string(),
-  destinationCountry: z.string(),
-  departureAirport: z.string(),
-  arrivalAirport: z.string(),
-  departureAt: z.string(),
-  prices: z.object({
-    economy: z.number(),
-    business: z.number(),
-    first: z.number(),
-  }),
-  availability: z.object({
-    economy: z.number(),
-    business: z.number(),
-    first: z.number(),
-  }),
-});
-type Flight = z.infer<typeof flightSchema>;
+import { apiErrorMessage } from "./lib/api";
+import { flightSchema, validationFieldSchema, type Flight, type ValidationField } from "./lib/flightSchema";
 type Tab = "search" | "bookings" | "manager";
 const money = (n: number) =>
   new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(
@@ -69,19 +50,7 @@ export function App() {
       const response = await fetch(`/api/flights?${params}`);
       const payload: unknown = await response.json();
       if (!response.ok) {
-        if (
-          typeof payload === "object" &&
-          payload !== null &&
-          "errors" in payload &&
-          typeof payload.errors === "object" &&
-          payload.errors !== null
-        ) {
-          const messages = Object.values(payload.errors as Record<string, unknown>)
-            .flatMap((value) => (Array.isArray(value) ? value : []))
-            .filter((value): value is string => typeof value === "string");
-          throw new Error(messages.join(" ") || "Could not load flights");
-        }
-        throw new Error("Could not load flights");
+        throw new Error(apiErrorMessage(payload, "Could not load flights"));
       }
       setFlights(z.array(flightSchema).parse(payload));
     } catch (e) {
@@ -106,7 +75,7 @@ export function App() {
     });
     const data = await response.json();
     if (!response.ok || typeof data.id !== "string") {
-      throw new Error(data.message ?? "Could not create passenger identity");
+      throw new Error(apiErrorMessage(data, "Could not create passenger identity"));
     }
 
     writeCookie(passengerCookie, data.id);
@@ -128,7 +97,7 @@ export function App() {
         }),
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.message ?? "Could not create booking");
+      if (!response.ok) throw new Error(apiErrorMessage(data, "Could not create booking"));
 
       setNotice(
         `Booking confirmed: ${data.booking.id} · ${flight.code} · ${cls} · ${money(price)} · ${date(flight.departureAt)}`,
@@ -490,6 +459,9 @@ function Manager() {
   const [file, setFile] = useState<File | null>(null);
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState<any | null>(null);
+  const [validationFields, setValidationFields] = useState<ValidationField[]>([]);
+  const [validationLoading, setValidationLoading] = useState(true);
+  const [validationError, setValidationError] = useState("");
 
   async function search(event?: React.FormEvent) {
     event?.preventDefault();
@@ -505,10 +477,7 @@ function Manager() {
       const response = await fetch(`/api/manager/bookings?${params}`);
       const data = await response.json();
       if (!response.ok) {
-        const messages = Object.values(data.errors ?? {})
-          .flatMap((value) => (Array.isArray(value) ? value : []))
-          .filter((value): value is string => typeof value === "string");
-        throw new Error(messages.join(" ") || "Could not load bookings");
+        throw new Error(apiErrorMessage(data, "Could not load bookings"));
       }
       setItems(data);
       setHasSearched(true);
@@ -522,6 +491,13 @@ function Manager() {
 
   useEffect(() => {
     void search();
+    fetch("/api/manager/flights/validation-details")
+      .then((response) =>
+        response.ok ? response.json() : Promise.reject(new Error("Could not load validation rules")),
+      )
+      .then((data) => setValidationFields(z.array(validationFieldSchema).parse(data)))
+      .catch((e) => setValidationError(e instanceof Error ? e.message : "Could not load validation rules"))
+      .finally(() => setValidationLoading(false));
   }, []);
 
   async function importFlights(event: React.FormEvent) {
@@ -557,6 +533,50 @@ function Manager() {
       <p className="mt-2 text-slate-500">
         All passenger bookings, including cancelled history.
       </p>
+      <section className="card mt-6">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h3 className="font-bold">Current flight validation rules</h3>
+            <p className="mt-1 text-sm text-slate-500">
+              Generated from the backend Flight model and kept in sync with its constraints.
+            </p>
+          </div>
+          {!validationLoading && !validationError && (
+            <span className="badge bg-cyan-50 text-cyan-700">{validationFields.length} fields</span>
+          )}
+        </div>
+        {validationLoading && <p className="mt-5 text-sm text-slate-500">Loading validation rules…</p>}
+        {validationError && <p className="mt-5 text-sm text-red-600">{validationError}</p>}
+        {!validationLoading && !validationError && (
+          <div className="mt-5 grid gap-3 md:grid-cols-2">
+            {validationFields.map((field) => (
+              <article key={field.field} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <h4 className="font-semibold">{field.displayName}</h4>
+                    <p className="mt-1 text-xs text-slate-500">{field.field} · {field.type}</p>
+                  </div>
+                  {field.required && <span className="badge bg-amber-100 text-amber-800">Required</span>}
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-600">
+                  {field.min !== null && <span className="rounded bg-white px-2 py-1">Min: {field.min}</span>}
+                  {field.max !== null && <span className="rounded bg-white px-2 py-1">Max: {field.max}</span>}
+                  {field.minLength !== null && <span className="rounded bg-white px-2 py-1">Min length: {field.minLength}</span>}
+                  {field.maxLength !== null && <span className="rounded bg-white px-2 py-1">Max length: {field.maxLength}</span>}
+                </div>
+                {field.options.length > 0 && (
+                  <p className="mt-3 text-xs text-slate-600"><strong>Options:</strong> {field.options.join(", ")}</p>
+                )}
+                {field.customRules.length > 0 && (
+                  <div className="mt-3 space-y-1 text-xs text-slate-600">
+                    {field.customRules.map((rule) => <p key={rule}><strong>Rule:</strong> {rule}</p>)}
+                  </div>
+                )}
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
       <form onSubmit={importFlights} className="card mt-6 border border-dashed border-cyan-200">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>

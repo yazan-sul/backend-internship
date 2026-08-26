@@ -48,3 +48,29 @@ code,departureCountry,destinationCountry,departureAirport,arrivalAirport,departu
 ```
 
 Use ISO date/time values such as `2026-09-15T14:30:00Z`, invariant decimal values such as `250.00`, and non-negative whole-number capacities. Quoted fields and commas inside quoted fields are supported. Imports are all-or-nothing: if any row fails validation, no flights from that file are saved. Errors report the row, field, rejected value, and reason.
+
+## Dynamic validation details
+
+Managers can view the current Flight model rules in the Manager tab. The same metadata is available from:
+
+```text
+GET /api/manager/flights/validation-details
+```
+
+The response is generated from the model's DataAnnotations and business-rule metadata, including field types, required status, ranges, string lengths, enum options, and custom rules. Run the focused regression suite with:
+
+```sh
+bun run test:backend
+```
+
+## Verification
+
+Run the complete local verification suite with the database running:
+
+```sh
+bun run test
+bun run test:backend:integration
+bun run build
+```
+
+The regular backend test command excludes database integration tests so it can run without PostgreSQL. The integration command uses the local Compose database, or a `DATABASE_URL` environment variable when supplied. Unexpected API failures are logged server-side and return a safe generic error response to clients.

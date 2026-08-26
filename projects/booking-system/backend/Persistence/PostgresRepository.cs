@@ -8,7 +8,7 @@ public sealed class PostgresRepository(NpgsqlDataSource dataSource)
 {
     public async Task<List<Flight>> GetFlightsAsync(CancellationToken ct = default)
     {
-        await using var command = dataSource.CreateCommand("SELECT * FROM flights ORDER BY departure_at");
+        await using var command = dataSource.CreateCommand("SELECT id,code,departure_country,destination_country,departure_airport,arrival_airport,departure_at,economy_price,business_price,first_price,economy_capacity,business_capacity,first_capacity,economy_remaining,business_remaining,first_remaining FROM flights ORDER BY departure_at");
         await using var reader = await command.ExecuteReaderAsync(ct);
         var result = new List<Flight>();
         while (await reader.ReadAsync(ct))
@@ -24,7 +24,7 @@ public sealed class PostgresRepository(NpgsqlDataSource dataSource)
         await using var transaction = await connection.BeginTransactionAsync(ct);
         foreach (var f in flights)
         {
-            await using var command = new NpgsqlCommand("INSERT INTO flights VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16) ON CONFLICT DO NOTHING", transaction.Connection, transaction);
+            await using var command = new NpgsqlCommand("INSERT INTO flights (id,code,departure_country,destination_country,departure_airport,arrival_airport,departure_at,economy_price,business_price,first_price,economy_capacity,business_capacity,first_capacity,economy_remaining,business_remaining,first_remaining) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16) ON CONFLICT DO NOTHING", transaction.Connection, transaction);
             AddFlight(command, f);
             await command.ExecuteNonQueryAsync(ct);
         }
@@ -96,7 +96,7 @@ public sealed class PostgresRepository(NpgsqlDataSource dataSource)
             }
         }
 
-        await using (var command = new NpgsqlCommand("INSERT INTO bookings VALUES ($1,$2,$3,$4,$5,$6,$7)", tx.Connection, tx))
+        await using (var command = new NpgsqlCommand("INSERT INTO bookings (id,passenger_id,flight_id,travel_class,final_price,booked_at,status) VALUES ($1,$2,$3,$4,$5,$6,$7)", tx.Connection, tx))
         {
             command.Parameters.AddWithValue(request.Id);
             command.Parameters.AddWithValue(request.PassengerId);
@@ -203,7 +203,7 @@ public sealed class PostgresRepository(NpgsqlDataSource dataSource)
 
         foreach (var flightId in flightIds)
         {
-            await using var command = new NpgsqlCommand("SELECT * FROM flights WHERE id=$1 FOR UPDATE", tx.Connection, tx);
+            await using var command = new NpgsqlCommand("SELECT id,code,departure_country,destination_country,departure_airport,arrival_airport,departure_at,economy_price,business_price,first_price,economy_capacity,business_capacity,first_capacity,economy_remaining,business_remaining,first_remaining FROM flights WHERE id=$1 FOR UPDATE", tx.Connection, tx);
             command.Parameters.AddWithValue(flightId);
             await using var reader = await command.ExecuteReaderAsync(ct);
             if (!await reader.ReadAsync(ct))
@@ -275,7 +275,7 @@ public sealed class PostgresRepository(NpgsqlDataSource dataSource)
         await using var transaction = await connection.BeginTransactionAsync(ct);
         foreach (var flight in flights)
         {
-            await using var command = new NpgsqlCommand("INSERT INTO flights VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)", connection, transaction);
+            await using var command = new NpgsqlCommand("INSERT INTO flights (id,code,departure_country,destination_country,departure_airport,arrival_airport,departure_at,economy_price,business_price,first_price,economy_capacity,business_capacity,first_capacity,economy_remaining,business_remaining,first_remaining) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)", connection, transaction);
             AddFlight(command, flight);
             await command.ExecuteNonQueryAsync(ct);
         }

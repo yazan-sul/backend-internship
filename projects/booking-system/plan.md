@@ -268,28 +268,29 @@ git checkout -b booking-system
 
 After each checkpoint, inspect `git diff`, run the relevant tests, and use a focused Conventional Commit. Keep generated data and local files out of commits unless they are intentional fixtures.
 
-## Progress tracking — 2026-08-26
+## Progress tracking
 
 ### Verified repository state
 
 - Branch: `booking-system`.
-- Working tree: clean.
+- Working tree: contains the intentional `plan.md` progress-tracking change.
 - Frontend typecheck: passing.
-- Full project build: passing, with existing NuGet vulnerability-feed and nullable warnings.
-- Root test suite: passing — 6 tests, 0 failures.
-- PostgreSQL container: running and healthy.
-- Backend API smoke test: not reachable on port `5080` when the complete development stack is not running.
+- Full project build: passing; backend build reports an offline NuGet vulnerability-feed warning.
+- Root test suite: not re-run during this Phase 1 verification; project-specific tests remain planned for Phase 8.
+- PostgreSQL container: running and healthy; two migrations applied and two seed flights present.
+- Backend API smoke test: passing on port `5080`; `/api/health` reports backend and PostgreSQL healthy.
+- Restart persistence check: passing; the two seeded flights remained after restarting the backend.
 
 ### Phase status
 
 | Phase                                     | Status          | Notes                                                                                                                                                             |
 | ----------------------------------------- | --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Phase 1 — Foundation and database storage | Mostly complete | Scaffold, PostgreSQL repository, schema initialization, seed data, and Compose integration exist; focused repository tests and final runtime verification remain. |
-| Phase 2 — Flight search                   | Partial         | Basic search API and UI exist; query validation and complete filter controls are missing.                                                                         |
-| Phase 3 — Passenger booking               | Partial         | Booking creation and transactional PostgreSQL seat decrement exist; the flow and remaining passenger experience are incomplete.                                   |
-| Phase 4 — Booking management              | Partial         | Listing and cancellation endpoints exist; modification and management UI are missing.                                                                             |
-| Phase 5 — Manager filters                 | Not implemented | Manager currently receives an unfiltered booking list.                                                                                                            |
-| Phase 6 — CSV import                      | Partial         | Basic backend import exists; robust CSV parsing, complete validation, and upload UI are missing.                                                                  |
+| Phase 1 — Foundation and database storage | Complete | Scaffold, PostgreSQL repository, transactional schema initialization, seed data, Compose integration, health check, builds, runtime startup, and restart persistence are verified. Focused automated tests remain planned for Phase 8. |
+| Phase 2 — Flight search                   | Complete        | Validated search API and frontend controls now support country, airport, date, class, and inclusive class-aware price filters. Live valid and invalid-query checks pass. |
+| Phase 3 — Passenger booking               | Complete        | Demo passenger identity, booking creation, class pricing, transactional seat decrement, confirmation, and passenger-owned lookup are verified end to end. |
+| Phase 4 — Booking management              | Complete        | Passenger-owned listing, cancellation, transactional modification, seat restoration, eligibility checks, and management UI are implemented and live-tested. |
+| Phase 5 — Manager filters                 | Complete | Manager booking search supports flight, price, countries, date, airports, passenger, and class filters; the dashboard shows loading, error, empty, and distinct active/cancelled states. |
+| Phase 6 — CSV import                      | Complete | Robust 12-column CSV parsing, row/field validation, transactional persistence, and manager upload/error UI are implemented. |
 | Phase 7 — Dynamic validation              | Partial         | Basic metadata endpoint exists; custom rules, UI, and tests are missing.                                                                                          |
 | Phase 8 — Hardening and documentation     | Not implemented | No project-specific automated test coverage or final documentation pass exists.                                                                                   |
 
@@ -299,14 +300,17 @@ Already present:
 
 - React/Vite/Tailwind frontend scaffold.
 - ASP.NET Core backend scaffold.
-- Basic flight search with country, airport, date, price, and class filters.
+- Validated flight search with country, airport, date, price, and class filters.
 - Class-specific flight prices and seat availability.
-- Passenger creation by email.
+- Passenger creation with a persisted demo identity.
 - Booking creation and class-specific seat decrement.
-- Passenger booking lookup.
-- Booking cancellation endpoint.
-- Basic manager booking listing.
-- Basic CSV import endpoint.
+- Passenger booking lookup by passenger ID.
+- Booking cancellation endpoint with ownership and departure checks.
+- Booking modification endpoint with transactional seat movement.
+- Manager booking search with validated, combinable filters.
+- Manager dashboard controls and distinct active/cancelled booking states.
+- Robust flight CSV import with transactional validation and detailed manager errors.
+- Robust CSV import endpoint with transactional persistence.
 - Basic validation metadata endpoint.
 - Successful frontend and backend builds.
 
@@ -348,3 +352,96 @@ The old `JsonFileRepository` and JSON seed file have been removed; PostgreSQL is
    - Test persistence, search combinations, seat accounting, booking lifecycle, CSV parsing/import, and validation metadata.
    - Test frontend validation, loading/error states, and cancellation/modification flows.
    - Document the CSV schema, validation rules, data location, reset instructions, and known assumptions.
+
+## 1. Flight model
+
+### Completed
+
+- Flight entity with route, date, prices, capacities, and remaining seats.
+- PostgreSQL persistence and migrations.
+- Seed flights on startup.
+- Flight search endpoint.
+- Filters for country, airports, date, price, and travel class.
+- Class-specific prices and availability.
+- Robust CSV import endpoint with transactional persistence.
+- Basic DataAnnotations validation.
+- Basic validation metadata endpoint.
+
+### Partially completed
+
+- Frontend search includes country, airport, date, price, and class filters.
+- Search API returns explicit flight result, price, and availability contracts.
+- Invalid date, class, negative price, and inverted price-range queries return structured validation errors.
+- CSV import supports headers, quoted values, blank rows, and malformed column counts.
+- CSV validation reports row, field, rejected value, and message.
+- Duplicate flight-code and cross-field validation are implemented.
+- Manager interface provides upload summaries and detailed import errors.
+
+### Not started
+
+- Automated tests for flight search, validation, and import.
+- Dynamic validation rules displayed in the frontend.
+
+———
+
+## 2. Passenger model
+
+### Completed
+
+- Passenger entity with ID, name, and contact details.
+- Database migration removing the old email field.
+- Passenger creation endpoint.
+- Name and contact-detail validation.
+- Passenger persistence in PostgreSQL.
+- Passenger lookup by PassengerId.
+
+### Partially completed
+
+- Frontend still uses passenger email as the identity.
+- Frontend does not create or select a passenger ID.
+- The frontend and backend passenger contracts are currently inconsistent.
+- No proper demo passenger/identity selector exists.
+
+### Not started
+
+- Authentication.
+- Role-based passenger/manager access.
+- Production-ready passenger identity management.
+- Passenger update or delete functionality.
+- Automated passenger tests.
+
+———
+
+## 3. Booking model
+
+### Completed
+
+- Booking entity with passenger, flight, class, price, date, and status.
+- Booking creation endpoint with string enum JSON contracts.
+- Passenger ownership check during booking creation.
+- Flight and passenger existence checks.
+- Class-specific price calculation.
+- Seat availability check.
+- PostgreSQL seat decrement.
+- Booking listing endpoint.
+- Basic cancellation endpoint.
+- Seat restoration after cancellation.
+- Cancelled booking history is preserved.
+
+### Partially completed
+
+- Frontend creates and stores a demo passenger ID before the first booking.
+- Booking confirmation includes booking ID, flight, class, price, and departure details.
+- “My bookings” frontend queries by passenger ID.
+- Passenger UI includes cancellation confirmation and modification controls.
+- Cancellation and modification enforce ownership, active status, future departure, and seat availability.
+- Cancellation rules do not fully handle departed flights.
+- Manager can search bookings with all requested filters.
+- Manager dashboard includes loading, error, empty, and booking-status states.
+- Automated booking tests are missing.
+
+### Not started
+
+- Full cancellation/modification lifecycle test coverage remains planned for Phase 8.
+- Proper authentication and authorization.
+- Complete booking lifecycle test coverage.

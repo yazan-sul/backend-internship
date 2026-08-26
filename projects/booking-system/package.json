@@ -12,7 +12,10 @@
     "db:up": "docker compose up -d db",
     "db:down": "docker compose stop db",
     "docker:up": "docker compose up --build",
-    "docker:down": "docker compose down"
+    "docker:down": "docker compose down",
+    "test:backend": "dotnet test backend.Tests/AirportTicketBookingSystem.Tests.csproj --filter FullyQualifiedName!~DatabaseIntegrationTests",
+    "test:backend:integration": "RUN_DATABASE_INTEGRATION_TESTS=1 dotnet test backend.Tests/AirportTicketBookingSystem.Tests.csproj --filter FullyQualifiedName~DatabaseIntegrationTests",
+    "test": "bun test && bun run test:backend"
   },
   "engines": {
     "bun": ">=1.3.0"

@@ -74,12 +74,6 @@ public sealed class ImportService(PostgresRepository repository)
             var businessCapacity = ParseInt(rowErrors, record.Row, "businessCapacity", values[10]);
             var firstCapacity = ParseInt(rowErrors, record.Row, "firstCapacity", values[11]);
 
-            if (departureAt != default && departureAt <= DateTime.UtcNow)
-                rowErrors.Add(new CsvImportError(record.Row, "departureAt", values[5], "Departure must be in the future."));
-            if (departureCountry.Equals(destinationCountry, StringComparison.OrdinalIgnoreCase))
-                rowErrors.Add(new CsvImportError(record.Row, "destinationCountry", destinationCountry, "Departure and destination countries must differ."));
-            if (departureAirport.Equals(arrivalAirport, StringComparison.OrdinalIgnoreCase))
-                rowErrors.Add(new CsvImportError(record.Row, "arrivalAirport", arrivalAirport, "Departure and arrival airports must differ."));
             if (economyPrice <= 0) rowErrors.Add(new CsvImportError(record.Row, "economyPrice", values[6], "Price must be greater than zero."));
             if (businessPrice <= 0) rowErrors.Add(new CsvImportError(record.Row, "businessPrice", values[7], "Price must be greater than zero."));
             if (firstPrice <= 0) rowErrors.Add(new CsvImportError(record.Row, "firstPrice", values[8], "Price must be greater than zero."));
