@@ -1,5 +1,5 @@
 {
-  "name": "project-template-frontend",
+  "name": "booking-system-frontend",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -24,4 +24,3 @@
     "typescript": "latest"
   }
 }
-

@@ -9,6 +9,8 @@
     "dev": "bun run scripts/dev.ts",
     "build": "bun run --cwd frontend build && dotnet build backend/AirportTicketBookingSystem.csproj",
     "typecheck": "tsc --noEmit -p tsconfig.json && bun run --cwd frontend tsc -b --pretty false",
+    "db:up": "docker compose up -d db",
+    "db:down": "docker compose stop db",
     "docker:up": "docker compose up --build",
     "docker:down": "docker compose down"
   },

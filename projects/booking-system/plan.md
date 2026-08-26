@@ -2,21 +2,21 @@
 
 ## Goal
 
-Build a maintainable full-stack web application that lets passengers search and book flights, manage their own bookings, and lets a manager filter bookings and import validated flights from CSV files. The React frontend communicates with an ASP.NET Core API, while the file system remains the only persistence layer.
+Build a maintainable full-stack web application that lets passengers search and book flights, manage their own bookings, and lets a manager filter bookings and import validated flights from CSV files. The React frontend communicates with an ASP.NET Core API, while PostgreSQL provides the application persistence layer.
 
 ## Scope and decisions
 
 - Follow `ai_docs/NEW_PROJECT.md`: create the `booking-system` branch first, then copy `projects/_template` into `projects/booking-system/`.
-- Keep all project configuration, frontend code, backend code, and file data inside the project directory; do not modify the root project detector.
+- Keep all project configuration, frontend code, backend code, and database-related project files inside the project directory; do not modify the root project detector.
 - Use React 19, TypeScript, Vite, Tailwind CSS, and Zod for the frontend.
 - Use ASP.NET Core .NET 10 Minimal API with nullable reference types enabled for the backend.
-- Persist application data as JSON files under a configurable `data/` directory. Use atomic replacement when saving to reduce corruption risk.
+- Persist application data in PostgreSQL with explicit schema initialization and transactional updates for booking and seat changes.
 - Store imported CSV files separately from application data; never modify the original upload.
 - Use `Guid` identifiers for flights, passengers, and bookings.
 - Model flight capacity per travel class and track remaining seats so booking availability is enforceable.
 - Treat a cancelled booking as historical data with `Cancelled` status rather than deleting it.
 - Use DataAnnotations for model constraints and reflection to generate validation metadata for the manager.
-- Do not add external services or a database in the first version.
+- Use a project-local PostgreSQL service in development and Compose; production authentication and managed infrastructure can be added later.
 - Use a simple development identity/role selector or seeded demo users for the first version; production authentication can be added later.
 
 ### Project setup required by `NEW_PROJECT.md`
@@ -30,7 +30,7 @@ cp -R projects/_template projects/booking-system
 - Rename `ProjectTemplate.csproj` to `AirportTicketBookingSystem.csproj` and update the Dockerfile, backend script, root namespace, and C# namespaces.
 - Rename the project package metadata, page titles, and template copy to `booking-system` / `BookingSystem`.
 - Keep the frontend on port `5173`, backend on port `5080`, and landing page on port `5174`.
-- Adapt the copied Compose and development scripts to run the frontend and backend without PostgreSQL, because this project uses JSON file storage.
+- Adapt the copied Compose and development scripts to run the frontend, backend, and PostgreSQL service together.
 - Before each project commit, verify the project branch, run the root tests, build the frontend, and check the local health endpoint.
 
 ## Proposed project structure
@@ -71,8 +71,7 @@ projects/airport-ticket-booking-system/
 │   │   ├── FlightValidator.cs
 │   │   └── ValidationMetadataProvider.cs
 │   ├── Persistence/
-│   │   ├── IFileRepository.cs
-│   │   ├── JsonFileRepository.cs
+│   │   ├── PostgresRepository.cs
 │   │   └── CsvFlightReader.cs
 │   ├── Services/
 │   │   ├── FlightService.cs
@@ -84,10 +83,6 @@ projects/airport-ticket-booking-system/
 │       ├── BookingEndpoints.cs
 │       ├── ManagerEndpoints.cs
 │       └── ImportEndpoints.cs
-├── data/
-│   ├── flights.json
-│   ├── passengers.json
-│   └── bookings.json
 └── README.md
 ```
 
@@ -114,16 +109,16 @@ projects/airport-ticket-booking-system/
 
 ## Phases and checkpoints
 
-### Phase 1 — Full-stack scaffold and file storage foundation
+### Phase 1 — Full-stack scaffold and database foundation
 
 - Copy the generic frontend/backend project scaffold and configure project-local development commands.
 - Create the React/Vite frontend shell and ASP.NET Core backend.
 - Configure the frontend proxy to the backend API and add a health endpoint.
-- Configure the project-local data directory.
+- Configure the project-local PostgreSQL service and connection settings.
 - Add domain enums and entities with nullable reference types enabled.
-- Implement a generic JSON file repository with missing-file initialization, explicit serialization options, and atomic save behavior.
-- Add sample seed data or a first-run initialization path.
-- Add README instructions for running both frontend and backend and locating data files.
+- Implement the PostgreSQL repository with schema initialization, explicit mappings, and transactional updates.
+- Add sample seed data or a first-run database initialization path.
+- Add README instructions for running the frontend, backend, and database, including database connection and reset details.
 
 Checkpoint: the frontend and backend start together, the health check works, and the backend can safely round-trip sample data.
 
@@ -239,9 +234,9 @@ feat: expose dynamic flight validation details
 ### Phase 8 — Hardening, tests, and final documentation
 
 - Add unit tests for validation, class pricing, search combinations, seat accounting, booking lifecycle, CSV parsing/import errors, and dynamic metadata.
-- Add file-repository tests for missing files, malformed JSON, atomic writes, and persistence across service instances.
+- Add database-repository tests for schema initialization, transactional writes, seat accounting, and persistence across service instances.
 - Test frontend form boundaries, invalid dates/decimals/enums, cancellation/modification edge cases, API errors, and empty data sets.
-- Add logging or user-safe error messages for file I/O failures without exposing stack traces in normal use.
+- Add logging or user-safe error messages for database failures without exposing stack traces in normal use.
 - Verify build, tests, clean first-run behavior, restart persistence, and import of both valid and invalid fixtures.
 - Update README with CSV schema, sample file, supported validation rules, data location, reset instructions, and known assumptions.
 
@@ -259,7 +254,7 @@ feat: complete airport ticket booking system
 - Managers can filter bookings by every requested parameter.
 - Managers can import CSV flights and receive detailed row/field validation errors.
 - Validation details are generated dynamically from the flight model’s metadata and custom rules.
-- Data is persisted only through the file system and normal operations do not lose existing data on a failed write.
+- Data is persisted in PostgreSQL and normal booking operations preserve consistency when a transaction fails.
 - The code is split into frontend features, API endpoints, domain, persistence, services, and validation responsibilities with focused tests and documentation.
 
 ## Git workflow
@@ -272,3 +267,84 @@ git checkout -b booking-system
 ```
 
 After each checkpoint, inspect `git diff`, run the relevant tests, and use a focused Conventional Commit. Keep generated data and local files out of commits unless they are intentional fixtures.
+
+## Progress tracking — 2026-08-26
+
+### Verified repository state
+
+- Branch: `booking-system`.
+- Working tree: clean.
+- Frontend typecheck: passing.
+- Full project build: passing, with existing NuGet vulnerability-feed and nullable warnings.
+- Root test suite: passing — 6 tests, 0 failures.
+- PostgreSQL container: running and healthy.
+- Backend API smoke test: not reachable on port `5080` when the complete development stack is not running.
+
+### Phase status
+
+| Phase                                     | Status          | Notes                                                                                                                                                             |
+| ----------------------------------------- | --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Phase 1 — Foundation and database storage | Mostly complete | Scaffold, PostgreSQL repository, schema initialization, seed data, and Compose integration exist; focused repository tests and final runtime verification remain. |
+| Phase 2 — Flight search                   | Partial         | Basic search API and UI exist; query validation and complete filter controls are missing.                                                                         |
+| Phase 3 — Passenger booking               | Partial         | Booking creation and transactional PostgreSQL seat decrement exist; the flow and remaining passenger experience are incomplete.                                   |
+| Phase 4 — Booking management              | Partial         | Listing and cancellation endpoints exist; modification and management UI are missing.                                                                             |
+| Phase 5 — Manager filters                 | Not implemented | Manager currently receives an unfiltered booking list.                                                                                                            |
+| Phase 6 — CSV import                      | Partial         | Basic backend import exists; robust CSV parsing, complete validation, and upload UI are missing.                                                                  |
+| Phase 7 — Dynamic validation              | Partial         | Basic metadata endpoint exists; custom rules, UI, and tests are missing.                                                                                          |
+| Phase 8 — Hardening and documentation     | Not implemented | No project-specific automated test coverage or final documentation pass exists.                                                                                   |
+
+### Current implementation
+
+Already present:
+
+- React/Vite/Tailwind frontend scaffold.
+- ASP.NET Core backend scaffold.
+- Basic flight search with country, airport, date, price, and class filters.
+- Class-specific flight prices and seat availability.
+- Passenger creation by email.
+- Booking creation and class-specific seat decrement.
+- Passenger booking lookup.
+- Booking cancellation endpoint.
+- Basic manager booking listing.
+- Basic CSV import endpoint.
+- Basic validation metadata endpoint.
+- Successful frontend and backend builds.
+
+### Architecture decision recorded
+
+The project originally described JSON file persistence, but that approach was replaced with PostgreSQL to resolve the persistence and transaction requirements. The current implementation uses:
+
+- `PostgresRepository` as the active persistence layer.
+- `Npgsql` for database access.
+- PostgreSQL schema initialization from the backend.
+- Docker Compose for a project-local PostgreSQL service.
+
+The old `JsonFileRepository` and JSON seed file have been removed; PostgreSQL is the only active persistence architecture.
+
+### Prioritized next steps
+
+1. Begin backend API stabilization.
+   - Add focused repository tests for schema initialization and transaction behavior.
+   - Keep the complete Compose stack and `/api/health` endpoint as the baseline verification.
+   - Continue documenting database startup, reset, and persistence behavior in the README.
+
+2. Stabilize the backend API.
+   - Extract flight, booking, manager, and import endpoints from `Program.cs`.
+   - Add explicit request and response contracts.
+   - Add centralized validation and safe error handling.
+   - Protect seat changes from concurrent booking operations.
+
+3. Complete passenger booking management.
+   - Implement booking modification.
+   - Enforce departed-flight and ownership rules for cancellation and modification.
+   - Add cancel and modify controls with confirmation and error states in the frontend.
+
+4. Complete manager functionality.
+   - Add all requested booking filters.
+   - Add the CSV upload interface and import summary.
+   - Add the dynamic validation-details view.
+
+5. Add focused tests and finish documentation.
+   - Test persistence, search combinations, seat accounting, booking lifecycle, CSV parsing/import, and validation metadata.
+   - Test frontend validation, loading/error states, and cancellation/modification flows.
+   - Document the CSV schema, validation rules, data location, reset instructions, and known assumptions.
