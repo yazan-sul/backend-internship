@@ -1,5 +1,5 @@
 using AirportTicketBookingSystem.Contracts;
-using AirportTicketBookingSystem.Domain;
+using AirportTicketBookingSystem.Models;
 using AirportTicketBookingSystem.Persistence;
 
 namespace AirportTicketBookingSystem.Services;

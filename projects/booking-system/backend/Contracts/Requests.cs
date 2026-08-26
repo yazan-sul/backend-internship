@@ -1,4 +1,4 @@
-using AirportTicketBookingSystem.Domain;
+using AirportTicketBookingSystem.Models;
 namespace AirportTicketBookingSystem.Contracts;
 public sealed record BookingRequest(Guid FlightId, TravelClass Class, string Name, string Email, string ContactDetails);
 public sealed record PassengerRequest(string Name, string Email, string ContactDetails);

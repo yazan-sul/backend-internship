@@ -57,7 +57,7 @@ projects/airport-ticket-booking-system/
 ├── backend/
 │   ├── AirportTicketBookingSystem.csproj
 │   ├── Program.cs
-│   ├── Domain/
+│   ├── Models/
 │   │   ├── Flight.cs
 │   │   ├── Passenger.cs
 │   │   ├── Booking.cs

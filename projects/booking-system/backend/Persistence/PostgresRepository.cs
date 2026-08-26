@@ -1,4 +1,4 @@
-using AirportTicketBookingSystem.Domain;
+using AirportTicketBookingSystem.Models;
 using Npgsql;
 
 namespace AirportTicketBookingSystem.Persistence;

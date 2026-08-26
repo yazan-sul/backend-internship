@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.Globalization;
 using AirportTicketBookingSystem.Contracts;
-using AirportTicketBookingSystem.Domain;
+using AirportTicketBookingSystem.Models;
 using AirportTicketBookingSystem.Persistence;
 using AirportTicketBookingSystem.Services;
 using AirportTicketBookingSystem.Validation;
