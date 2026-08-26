@@ -10,5 +10,5 @@ public sealed class Passenger
     public string Name { get; set; } = "";
 
     [Required]
-    public string? ContactDetails { get; set; } = "";
+    public string? ContactDetails { get; set; }
 }

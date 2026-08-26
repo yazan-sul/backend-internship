@@ -27,7 +27,7 @@ To start the complete containerized stack:
 bun run docker:up
 ```
 
-The database, backend, and frontend are initialized and started together. The database schema and demo flights are initialized automatically by the backend.
+The database, backend, and frontend are initialized and started together. Database migrations and demo flights are applied automatically by the backend. Applied migrations are tracked in the PostgreSQL `schema_migrations` table.
 
 Useful checks:
 

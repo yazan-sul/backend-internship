@@ -24,13 +24,22 @@ type WorkspaceRuntime = {
 export async function listProjects(projectsDirectory: string) {
   const entries = await readdir(projectsDirectory, { withFileTypes: true });
   const projects = entries
-    .filter((entry) => entry.isDirectory() && entry.name !== "_template" && !entry.name.startsWith("."))
+    .filter(
+      (entry) =>
+        entry.isDirectory() &&
+        entry.name !== "_template" &&
+        !entry.name.startsWith("."),
+    )
     .map((entry) => entry.name)
     .sort();
 
-  const invalidNames = projects.filter((name) => !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(name));
+  const invalidNames = projects.filter(
+    (name) => !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(name),
+  );
   if (invalidNames.length > 0) {
-    throw new Error(`Project folders must use lowercase-kebab-case: ${invalidNames.join(", ")}`);
+    throw new Error(
+      `Project folders must use lowercase-kebab-case: ${invalidNames.join(", ")}`,
+    );
   }
   return projects;
 }
@@ -50,7 +59,11 @@ export async function findCurrentProject(projectsDirectory: string) {
   return resolve(projectsDirectory, projects[0]);
 }
 
-function git(repositoryRoot: string, arguments_: string[], output: "pipe" | "inherit" = "pipe") {
+function git(
+  repositoryRoot: string,
+  arguments_: string[],
+  output: "pipe" | "inherit" = "pipe",
+) {
   return Bun.spawnSync(["git", ...arguments_], {
     cwd: repositoryRoot,
     stdin: "inherit",
@@ -61,7 +74,7 @@ function git(repositoryRoot: string, arguments_: string[], output: "pipe" | "inh
 
 function gitText(repositoryRoot: string, arguments_: string[]) {
   const result = git(repositoryRoot, arguments_);
-  return result.exitCode === 0 ? result.stdout?.toString().trim() ?? "" : "";
+  return result.exitCode === 0 ? (result.stdout?.toString().trim() ?? "") : "";
 }
 
 export function getCurrentBranch(repositoryRoot: string) {
@@ -79,7 +92,11 @@ function getLocalBranches(repositoryRoot: string): BranchInfo[] {
   return names.map((name) => ({
     name,
     hasProject:
-      git(repositoryRoot, ["cat-file", "-e", `${name}:projects/${name}/package.json`]).exitCode === 0,
+      git(repositoryRoot, [
+        "cat-file",
+        "-e",
+        `${name}:projects/${name}/package.json`,
+      ]).exitCode === 0,
   }));
 }
 
@@ -87,7 +104,10 @@ function hasUncommittedChanges(repositoryRoot: string) {
   return gitText(repositoryRoot, ["status", "--porcelain"]).length > 0;
 }
 
-async function getWorkspaceState(repositoryRoot: string, runtime: WorkspaceRuntime) {
+async function getWorkspaceState(
+  repositoryRoot: string,
+  runtime: WorkspaceRuntime,
+) {
   const currentBranch = getCurrentBranch(repositoryRoot);
   const projects = await listProjects(resolve(repositoryRoot, "projects"));
   return {
@@ -109,7 +129,8 @@ function corsHeaders(origin: string | null) {
     "Cache-Control": "no-store",
     Vary: "Origin",
   };
-  if (origin && ALLOWED_ORIGINS.has(origin)) headers["Access-Control-Allow-Origin"] = origin;
+  if (origin && ALLOWED_ORIGINS.has(origin))
+    headers["Access-Control-Allow-Origin"] = origin;
   return headers;
 }
 
@@ -166,12 +187,21 @@ function killProcessGroup(service: Bun.Subprocess, signal: NodeJS.Signals) {
 }
 
 function composeHasService(composeFile: string, service: string, cwd: string) {
-  const result = Bun.spawnSync(["docker", "compose", "-f", composeFile, "config", "--services"], {
-    cwd,
-    stdout: "pipe",
-    stderr: "pipe",
-  });
-  return result.exitCode === 0 && result.stdout?.toString().split("\n").some((name) => name.trim() === service);
+  const result = Bun.spawnSync(
+    ["docker", "compose", "-f", composeFile, "config", "--services"],
+    {
+      cwd,
+      stdout: "pipe",
+      stderr: "pipe",
+    },
+  );
+  return (
+    result.exitCode === 0 &&
+    result.stdout
+      ?.toString()
+      .split("\n")
+      .some((name) => name.trim() === service)
+  );
 }
 
 async function startWorkspaceServices(
@@ -195,13 +225,19 @@ async function startWorkspaceServices(
     console.log(`Starting ${activeProject}...`);
 
     const composeFile = resolve(projectDirectory, "docker-compose.yml");
-    if (await Bun.file(composeFile).exists() && composeHasService(composeFile, "db", projectDirectory)) {
+    if (
+      (await Bun.file(composeFile).exists()) &&
+      composeHasService(composeFile, "db", projectDirectory)
+    ) {
       const compose = ["docker", "compose", "-f", composeFile];
-      const running = Bun.spawnSync([...compose, "ps", "--status", "running", "--quiet", "db"], {
-        cwd: projectDirectory,
-        stdout: "pipe",
-        stderr: "inherit",
-      });
+      const running = Bun.spawnSync(
+        [...compose, "ps", "--status", "running", "--quiet", "db"],
+        {
+          cwd: projectDirectory,
+          stdout: "pipe",
+          stderr: "inherit",
+        },
+      );
       const wasRunning = (running.stdout?.toString().trim().length ?? 0) > 0;
       const started = Bun.spawnSync([...compose, "up", "-d", "--wait", "db"], {
         cwd: projectDirectory,
@@ -210,7 +246,8 @@ async function startWorkspaceServices(
         stderr: "inherit",
       });
       databaseStarted = started.exitCode === 0 && !wasRunning;
-      if (started.exitCode !== 0) runtime.lastError = "Could not start the project database.";
+      if (started.exitCode !== 0)
+        runtime.lastError = "Could not start the project database.";
     }
 
     const project = Bun.spawn(["bun", "run", "--no-orphans", "dev"], {
@@ -226,7 +263,8 @@ async function startWorkspaceServices(
       ["http://127.0.0.1:5080/api/health", PROJECT_URL],
       project,
     );
-    if (!runtime.projectReady) runtime.lastError = `${activeProject} did not become ready within 30 seconds.`;
+    if (!runtime.projectReady)
+      runtime.lastError = `${activeProject} did not become ready within 30 seconds.`;
   } else {
     const detail = currentBranch
       ? `No projects/${currentBranch} folder matches the current branch.`
@@ -244,27 +282,33 @@ async function startWorkspaceServices(
     throw new Error("Could not install landing page dependencies.");
   }
 
-  const landing = Bun.spawn(["bun", "run", "--no-orphans", "--cwd", "landing", "dev"], {
-    cwd: repositoryRoot,
-    stdin: "inherit",
-    stdout: "inherit",
-    stderr: "inherit",
-    env: {
-      ...process.env,
-      LANDING_PORT: String(LANDING_PORT),
-      OPEN_BROWSER: openBrowser ? "true" : "false",
-      VITE_WORKSPACE_CONTROL_URL: `http://${CONTROL_HOST}:${CONTROL_PORT}`,
+  const landing = Bun.spawn(
+    ["bun", "run", "--no-orphans", "--cwd", "landing", "dev"],
+    {
+      cwd: repositoryRoot,
+      stdin: "inherit",
+      stdout: "inherit",
+      stderr: "inherit",
+      env: {
+        ...process.env,
+        LANDING_PORT: String(LANDING_PORT),
+        OPEN_BROWSER: openBrowser ? "true" : "false",
+        VITE_WORKSPACE_CONTROL_URL: `http://${CONTROL_HOST}:${CONTROL_PORT}`,
+      },
+      detached: true,
     },
-    detached: true,
-  });
+  );
   services.push(landing);
   runtime.landingReady = await waitUntilReachable([LANDING_URL], landing);
   return { services, databaseStarted, projectDirectory };
 }
 
 async function stopWorkspaceServices(workspace: RunningWorkspace) {
-  for (const service of workspace.services) killProcessGroup(service, "SIGTERM");
-  const gracefulShutdown = Promise.allSettled(workspace.services.map((service) => service.exited));
+  for (const service of workspace.services)
+    killProcessGroup(service, "SIGTERM");
+  const gracefulShutdown = Promise.allSettled(
+    workspace.services.map((service) => service.exited),
+  );
   const exitedGracefully = await Promise.race([
     gracefulShutdown.then(() => true),
     Bun.sleep(5000).then(() => false),
@@ -289,7 +333,9 @@ async function stopWorkspaceServices(workspace: RunningWorkspace) {
   }
 }
 
-export async function runCurrentProject(projectsDirectory = resolve(import.meta.dir, "..", "projects")) {
+export async function runCurrentProject(
+  projectsDirectory = resolve(import.meta.dir, "..", "projects"),
+) {
   const projectDirectory = await findCurrentProject(projectsDirectory);
   console.log(`Starting ${basename(projectDirectory)}...`);
   const child = Bun.spawn(["bun", "run", "--no-orphans", "dev"], {
@@ -304,8 +350,13 @@ export async function runCurrentProject(projectsDirectory = resolve(import.meta.
   return child.exited;
 }
 
-export async function runWorkspace(repositoryRoot = resolve(import.meta.dir, "..")) {
-  const runtime: WorkspaceRuntime = { projectReady: false, landingReady: false };
+export async function runWorkspace(
+  repositoryRoot = resolve(import.meta.dir, ".."),
+) {
+  const runtime: WorkspaceRuntime = {
+    projectReady: false,
+    landingReady: false,
+  };
   const switchQueue = createSwitchQueue();
 
   const controlServer = Bun.serve({
@@ -328,22 +379,44 @@ export async function runWorkspace(repositoryRoot = resolve(import.meta.dir, "..
         });
       }
       if (url.pathname === "/workspace/state" && request.method === "GET") {
-        return json(await getWorkspaceState(repositoryRoot, runtime), 200, origin);
+        return json(
+          await getWorkspaceState(repositoryRoot, runtime),
+          200,
+          origin,
+        );
       }
       if (url.pathname === "/workspace/switch" && request.method === "POST") {
         if (!origin || !ALLOWED_ORIGINS.has(origin)) {
-          return json({ error: "Branch switching is only allowed from the local landing page." }, 403, origin);
+          return json(
+            {
+              error:
+                "Branch switching is only allowed from the local landing page.",
+            },
+            403,
+            origin,
+          );
         }
-        if (runtime.switchingTo) return json({ error: "A branch switch is already running." }, 409, origin);
+        if (runtime.switchingTo)
+          return json(
+            { error: "A branch switch is already running." },
+            409,
+            origin,
+          );
 
-        const body = await request.json().catch(() => null) as { branch?: unknown } | null;
+        const body = (await request.json().catch(() => null)) as {
+          branch?: unknown;
+        } | null;
         const branch = typeof body?.branch === "string" ? body.branch : "";
         const branches = getLocalBranches(repositoryRoot);
         if (!branches.some((candidate) => candidate.name === branch)) {
           return json({ error: "Unknown local branch." }, 400, origin);
         }
         if (hasUncommittedChanges(repositoryRoot)) {
-          return json({ error: "Commit or stash all changes before switching branches." }, 409, origin);
+          return json(
+            { error: "Commit or stash all changes before switching branches." },
+            409,
+            origin,
+          );
         }
         if (branch === getCurrentBranch(repositoryRoot)) {
           return json({ ok: true, currentBranch: branch }, 200, origin);
@@ -358,7 +431,9 @@ export async function runWorkspace(repositoryRoot = resolve(import.meta.dir, "..
     },
   });
 
-  console.log(`Local workspace control: http://${CONTROL_HOST}:${CONTROL_PORT}`);
+  console.log(
+    `Local workspace control: http://${CONTROL_HOST}:${CONTROL_PORT}`,
+  );
 
   let signalExitCode: number | undefined;
   const interrupted = new Promise<number>((resolveInterruption) => {
@@ -375,13 +450,19 @@ export async function runWorkspace(repositoryRoot = resolve(import.meta.dir, "..
   let openBrowser = true;
   let exitCode = 0;
   while (signalExitCode === undefined) {
-    const workspace = await startWorkspaceServices(repositoryRoot, runtime, openBrowser);
+    const workspace = await startWorkspaceServices(
+      repositoryRoot,
+      runtime,
+      openBrowser,
+    );
     openBrowser = false;
     runtime.switchingTo = undefined;
 
     const event = await Promise.race([
       interrupted.then((code) => ({ type: "signal" as const, code })),
-      switchQueue.next().then((branch) => ({ type: "switch" as const, branch })),
+      switchQueue
+        .next()
+        .then((branch) => ({ type: "switch" as const, branch })),
       ...workspace.services.map((service) =>
         service.exited.then((code) => ({ type: "exit" as const, code })),
       ),
@@ -402,7 +483,8 @@ export async function runWorkspace(repositoryRoot = resolve(import.meta.dir, "..
 
     console.log(`Switching to ${event.branch}...`);
     const switched = git(repositoryRoot, ["switch", event.branch], "inherit");
-    if (switched.exitCode !== 0) runtime.lastError = `Git could not switch to ${event.branch}.`;
+    if (switched.exitCode !== 0)
+      runtime.lastError = `Git could not switch to ${event.branch}.`;
   }
 
   await controlServer.stop(true);

@@ -10,7 +10,7 @@ Build a maintainable full-stack web application that lets passengers search and 
 - Keep all project configuration, frontend code, backend code, and database-related project files inside the project directory; do not modify the root project detector.
 - Use React 19, TypeScript, Vite, Tailwind CSS, and Zod for the frontend.
 - Use ASP.NET Core .NET 10 Minimal API with nullable reference types enabled for the backend.
-- Persist application data in PostgreSQL with explicit schema initialization and transactional updates for booking and seat changes.
+- Persist application data in PostgreSQL with explicit SQL migrations and transactional updates for booking and seat changes.
 - Store imported CSV files separately from application data; never modify the original upload.
 - Use `Guid` identifiers for flights, passengers, and bookings.
 - Model flight capacity per travel class and track remaining seats so booking availability is enforceable.
@@ -116,7 +116,7 @@ projects/airport-ticket-booking-system/
 - Configure the frontend proxy to the backend API and add a health endpoint.
 - Configure the project-local PostgreSQL service and connection settings.
 - Add domain enums and entities with nullable reference types enabled.
-- Implement the PostgreSQL repository with schema initialization, explicit mappings, and transactional updates.
+- Implement the PostgreSQL repository with explicit SQL migrations, explicit mappings, and transactional updates.
 - Add sample seed data or a first-run database initialization path.
 - Add README instructions for running the frontend, backend, and database, including database connection and reset details.
 
