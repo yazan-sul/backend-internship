@@ -484,24 +484,79 @@ function Bookings({ passengerId }: { passengerId: string | null }) {
 }
 function Manager() {
   const [items, setItems] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [hasSearched, setHasSearched] = useState(false);
+
+  async function search(event?: React.FormEvent) {
+    event?.preventDefault();
+    setLoading(true);
+    setError("");
+    try {
+      const form = event?.currentTarget as HTMLFormElement | undefined;
+      const params = form
+        ? new URLSearchParams(
+            Array.from(new FormData(form).entries()) as [string, string][],
+          )
+        : new URLSearchParams();
+      const response = await fetch(`/api/manager/bookings?${params}`);
+      const data = await response.json();
+      if (!response.ok) {
+        const messages = Object.values(data.errors ?? {})
+          .flatMap((value) => (Array.isArray(value) ? value : []))
+          .filter((value): value is string => typeof value === "string");
+        throw new Error(messages.join(" ") || "Could not load bookings");
+      }
+      setItems(data);
+      setHasSearched(true);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not load bookings");
+      setItems([]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   useEffect(() => {
-    fetch("/api/manager/bookings")
-      .then((r) => r.json())
-      .then(setItems);
+    void search();
   }, []);
+
   return (
     <section>
       <h2 className="heading">Manager overview</h2>
       <p className="mt-2 text-slate-500">
         All passenger bookings, including cancelled history.
       </p>
-      <div className="mt-6 overflow-hidden rounded-2xl bg-white shadow-sm">
-        <table className="w-full text-left text-sm">
+      <form onSubmit={search} className="card mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <input name="flight" placeholder="Flight code" className="field" />
+        <input name="passenger" placeholder="Passenger name or contact" className="field" />
+        <input name="departureCountry" placeholder="From country" className="field" />
+        <input name="destinationCountry" placeholder="To country" className="field" />
+        <input name="departureAirport" placeholder="From airport" className="field" />
+        <input name="arrivalAirport" placeholder="To airport" className="field" />
+        <input name="date" type="date" className="field" />
+        <select name="class" defaultValue="" className="field">
+          <option value="">Any class</option>
+          <option>Economy</option>
+          <option>Business</option>
+          <option>First</option>
+        </select>
+        <input name="minPrice" type="number" min="0" step="0.01" placeholder="Min booking price" className="field" />
+        <input name="maxPrice" type="number" min="0" step="0.01" placeholder="Max booking price" className="field" />
+        <button disabled={loading} className="rounded-lg bg-slate-900 px-4 py-3 font-semibold text-white hover:bg-slate-700 disabled:opacity-60 sm:col-span-2 lg:col-span-4">
+          {loading ? "Loading bookings…" : "Apply filters"}
+        </button>
+      </form>
+      {error && <p className="mt-4 text-red-600">{error}</p>}
+      <div className="mt-6 overflow-x-auto rounded-2xl bg-white shadow-sm">
+        <table className="w-full min-w-[760px] text-left text-sm">
           <thead className="bg-slate-50 text-slate-500">
             <tr>
               <th className="p-4">Flight</th>
               <th className="p-4">Passenger</th>
               <th className="p-4">Class</th>
+              <th className="p-4">Price</th>
+              <th className="p-4">Departure</th>
               <th className="p-4">Status</th>
             </tr>
           </thead>
@@ -509,11 +564,16 @@ function Manager() {
             {items.map((x) => (
               <tr className="border-t" key={x.booking.id}>
                 <td className="p-4 font-semibold">{x.flight?.code}</td>
-                <td className="p-4">{x.passenger?.email}</td>
+                <td className="p-4">{x.passenger?.name}<span className="block text-xs text-slate-400">{x.passenger?.contactDetails}</span></td>
                 <td className="p-4">{x.booking.class}</td>
-                <td className="p-4">{x.booking.status}</td>
+                <td className="p-4">{money(x.booking.finalPrice)}</td>
+                <td className="p-4">{x.flight ? date(x.flight.departureAt) : "—"}</td>
+                <td className="p-4"><span className={`badge ${x.booking.status === "Active" ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"}`}>{x.booking.status}</span></td>
               </tr>
             ))}
+            {items.length === 0 && !loading && (
+              <tr><td colSpan={6} className="p-10 text-center text-slate-500">{hasSearched ? "No bookings match these filters." : "No bookings found."}</td></tr>
+            )}
           </tbody>
         </table>
       </div>
