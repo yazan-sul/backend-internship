@@ -1,38 +1,37 @@
-using System.ComponentModel.DataAnnotations;
-using System.Globalization;
-using AirportTicketBookingSystem.Contracts;
-using AirportTicketBookingSystem.Models;
+using AirportTicketBookingSystem.Api;
 using AirportTicketBookingSystem.Persistence;
 using AirportTicketBookingSystem.Services;
 using AirportTicketBookingSystem.Validation;
 using Npgsql;
 
 var builder = WebApplication.CreateBuilder(args);
-var connectionString = builder.Configuration.GetConnectionString("Database") ?? throw new InvalidOperationException("ConnectionStrings:Database is required.");
+
+var connectionString = builder.Configuration.GetConnectionString("Database")
+    ?? throw new InvalidOperationException("ConnectionStrings:Database is required.");
+
 builder.Services.AddSingleton(NpgsqlDataSource.Create(connectionString));
+builder.Services.AddSingleton<MigrationRunner>();
 builder.Services.AddSingleton<PostgresRepository>();
 builder.Services.AddSingleton<BookingService>();
 builder.Services.AddSingleton<ValidationMetadataProvider>();
+
 var app = builder.Build();
-
+var migrations = app.Services.GetRequiredService<MigrationRunner>();
 var repository = app.Services.GetRequiredService<PostgresRepository>();
-await repository.InitializeAsync();
-if (!(await repository.GetFlightsAsync()).Any()) await repository.SeedFlightsAsync(SeedFlights());
 
-app.MapGet("/api/health", async (NpgsqlDataSource dataSource, CancellationToken ct) => { try { await using var command = dataSource.CreateCommand("SELECT 1"); await command.ExecuteScalarAsync(ct); return Results.Ok(new { message = "API and database are ready", services = new { backend = "healthy", postgresql = "healthy" } }); } catch (NpgsqlException) { return Results.Json(new { message = "API is ready, but the database is unavailable", services = new { backend = "healthy", postgresql = "unavailable" } }, statusCode: 503); } });
-app.MapGet("/api/flights", async (HttpRequest req, PostgresRepository repo, CancellationToken ct) => {
-    var q = await repo.GetFlightsAsync(ct); var query = req.Query; string? s(string k) => query.TryGetValue(k, out var v) ? v.ToString() : null; decimal? d(string k) => decimal.TryParse(s(k), NumberStyles.Number, CultureInfo.InvariantCulture, out var v) ? v : null; DateTime? date = DateTime.TryParse(s("date"), out var dt) ? dt.Date : null; TravelClass? cls = Enum.TryParse<TravelClass>(s("class"), true, out var c) ? c : null;
-    q = q.Where(f => (s("departureCountry") is null || f.DepartureCountry.Equals(s("departureCountry"), StringComparison.OrdinalIgnoreCase)) && (s("destinationCountry") is null || f.DestinationCountry.Equals(s("destinationCountry"), StringComparison.OrdinalIgnoreCase)) && (s("departureAirport") is null || f.DepartureAirport.Equals(s("departureAirport"), StringComparison.OrdinalIgnoreCase)) && (s("arrivalAirport") is null || f.ArrivalAirport.Equals(s("arrivalAirport"), StringComparison.OrdinalIgnoreCase)) && (!date.HasValue || f.DepartureAt.Date == date) && (!d("minPrice").HasValue || f.EconomyPrice >= d("minPrice")) && (!d("maxPrice").HasValue || f.EconomyPrice <= d("maxPrice")) && (!cls.HasValue || f.Remaining(cls.Value) > 0)).Where(f => f.DepartureAt > DateTime.UtcNow).OrderBy(f => f.DepartureAt).ToList();
-    return Results.Ok(q.Select(f => new { f.Id, f.Code, f.DepartureCountry, f.DestinationCountry, f.DepartureAirport, f.ArrivalAirport, f.DepartureAt, prices = new { economy = f.EconomyPrice, business = f.BusinessPrice, first = f.FirstPrice }, availability = new { economy = f.EconomyRemaining, business = f.BusinessRemaining, first = f.FirstRemaining } }));
-});
-app.MapPost("/api/passengers", async (PassengerRequest request, PostgresRepository repo, CancellationToken ct) => { var errors = Validate(request); if (errors.Count > 0) return Results.ValidationProblem(errors); var p = await repo.FindPassengerAsync(request.Email.Trim(), ct) ?? new Passenger { Name = request.Name.Trim(), Email = request.Email.Trim().ToLowerInvariant(), ContactDetails = request.ContactDetails.Trim() }; return Results.Ok(await repo.SavePassengerAsync(p, ct)); });
-app.MapPost("/api/bookings", async (BookingRequest request, BookingService service, CancellationToken ct) => { try { return Results.Ok(await service.CreateAsync(request, ct)); } catch (InvalidOperationException e) { return Results.BadRequest(new { message = e.Message }); } });
-app.MapGet("/api/bookings/me", async (string email, PostgresRepository repo, CancellationToken ct) => { var p = await repo.FindPassengerAsync(email, ct); if (p is null) return Results.Ok(Array.Empty<object>()); var flights = await repo.GetFlightsAsync(ct); return Results.Ok((await repo.GetBookingsAsync(ct)).Where(x => x.PassengerId == p.Id).Select(b => new { booking = b, flight = flights.FirstOrDefault(f => f.Id == b.FlightId) })); });
-app.MapPost("/api/bookings/{id:guid}/cancel", async (Guid id, string email, BookingService service, CancellationToken ct) => { try { var result = await service.CancelAsync(id, email, ct); return result is null ? Results.NotFound(new { message = "Booking not found." }) : Results.Ok(result); } catch (InvalidOperationException e) { return Results.BadRequest(new { message = e.Message }); } });
-app.MapGet("/api/manager/bookings", async (PostgresRepository repo, CancellationToken ct) => { var flights = await repo.GetFlightsAsync(ct); var passengers = await repo.GetPassengersAsync(ct); return Results.Ok((await repo.GetBookingsAsync(ct)).Select(b => new { booking = b, flight = flights.FirstOrDefault(f => f.Id == b.FlightId), passenger = passengers.FirstOrDefault(p => p.Id == b.PassengerId) })); });
-app.MapGet("/api/manager/flights/validation-details", (ValidationMetadataProvider provider) => Results.Ok(provider.Details<Flight>()));
-app.MapPost("/api/manager/flights/import", async (IFormFile file, PostgresRepository repo, CancellationToken ct) => { if (file.Length == 0) return Results.BadRequest(new { message = "Choose a non-empty CSV file." }); var errors = new List<object>(); var imported = new List<Flight>(); using var reader = new StreamReader(file.OpenReadStream()); var line = 0; await reader.ReadLineAsync(ct); while (await reader.ReadLineAsync(ct) is { } row) { line++; if (string.IsNullOrWhiteSpace(row)) continue; var c = row.Split(','); if (c.Length != 11) { errors.Add(new { row = line + 1, field = "row", value = row, message = "Expected 11 columns." }); continue; } if (!DateTime.TryParse(c[5], CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var departure) || !decimal.TryParse(c[6], NumberStyles.Number, CultureInfo.InvariantCulture, out var ep) || !decimal.TryParse(c[7], NumberStyles.Number, CultureInfo.InvariantCulture, out var bp) || !decimal.TryParse(c[8], NumberStyles.Number, CultureInfo.InvariantCulture, out var fp) || !int.TryParse(c[9], out var ec) || !int.TryParse(c[10], out var bc)) { errors.Add(new { row = line + 1, field = "values", value = row, message = "Invalid date, price, or capacity." }); continue; } var f = new Flight { Code = c[0].Trim(), DepartureCountry = c[1].Trim(), DestinationCountry = c[2].Trim(), DepartureAirport = c[3].Trim(), ArrivalAirport = c[4].Trim(), DepartureAt = departure.ToUniversalTime(), EconomyPrice = ep, BusinessPrice = bp, FirstPrice = fp, EconomyCapacity = ec, BusinessCapacity = bc, FirstCapacity = 0, EconomyRemaining = ec, BusinessRemaining = bc, FirstRemaining = 0 }; var validation = new List<ValidationResult>(); if (!Validator.TryValidateObject(f, new ValidationContext(f), validation, true) || f.DepartureAt <= DateTime.UtcNow || f.DepartureCountry.Equals(f.DestinationCountry, StringComparison.OrdinalIgnoreCase) || ep <= 0 || bp <= 0 || fp <= 0) errors.AddRange(validation.Select(e => new { row = line + 1, field = e.MemberNames.FirstOrDefault() ?? "row", value = "", message = e.ErrorMessage ?? "Invalid value." }).Cast<object>()); else imported.Add(f); } if (errors.Count > 0) return Results.BadRequest(new { imported = 0, errors }); await repo.AddFlightsAsync(imported, ct); return Results.Ok(new { imported = imported.Count, errors = Array.Empty<object>() }); });
+await migrations.ApplyAsync();
+
+if (!(await repository.GetFlightsAsync()).Any())
+{
+    await repository.SeedFlightsAsync(SeedData.Flights());
+}
+
+app
+    .MapHealthEndpoints()
+    .MapFlightEndpoints()
+    .MapPassengerEndpoints()
+    .MapBookingEndpoints()
+    .MapManagerEndpoints()
+    .MapImportEndpoints();
+
 app.Run();
-
-static Dictionary<string, string[]> Validate<T>(T value) { var results = new List<ValidationResult>(); Validator.TryValidateObject(value, new ValidationContext(value!), results, true); return results.GroupBy(x => x.MemberNames.FirstOrDefault() ?? "request").ToDictionary(x => x.Key, x => x.Select(y => y.ErrorMessage ?? "Invalid value.").ToArray()); }
-static List<Flight> SeedFlights() => [new Flight { Code = "SB101", DepartureCountry = "Jordan", DestinationCountry = "France", DepartureAirport = "AMM", ArrivalAirport = "CDG", DepartureAt = DateTime.UtcNow.AddDays(12), EconomyPrice = 220, BusinessPrice = 580, FirstPrice = 1100, EconomyCapacity = 80, BusinessCapacity = 12, FirstCapacity = 4, EconomyRemaining = 80, BusinessRemaining = 12, FirstRemaining = 4 }, new Flight { Code = "SB202", DepartureCountry = "Jordan", DestinationCountry = "Italy", DepartureAirport = "AMM", ArrivalAirport = "FCO", DepartureAt = DateTime.UtcNow.AddDays(20), EconomyPrice = 180, BusinessPrice = 450, FirstPrice = 900, EconomyCapacity = 90, BusinessCapacity = 10, FirstCapacity = 2, EconomyRemaining = 90, BusinessRemaining = 10, FirstRemaining = 2 }];
