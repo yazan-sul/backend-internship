@@ -1,5 +1,9 @@
 export {};
 
+const projectDirectory = new URL("..", import.meta.url).pathname;
+const backendProject = new URL("../backend/AirportTicketBookingSystem.csproj", import.meta.url).pathname;
+const frontendDirectory = new URL("../frontend", import.meta.url).pathname;
+
 const frontendPort = process.env.PROJECT_FRONTEND_PORT ?? "5173";
 
 function killProcessGroup(child: Bun.Subprocess, signal: NodeJS.Signals) {
@@ -11,14 +15,16 @@ function killProcessGroup(child: Bun.Subprocess, signal: NodeJS.Signals) {
 }
 
 const processes = [
-  Bun.spawn(["dotnet", "watch", "--no-hot-reload", "run", "--project", "backend/AirportTicketBookingSystem.csproj"], {
+  Bun.spawn(["dotnet", "watch", "--no-hot-reload", "run", "--project", backendProject], {
+    cwd: projectDirectory,
     stdin: "inherit",
     stdout: "inherit",
     stderr: "inherit",
     env: { ...process.env, ASPNETCORE_ENVIRONMENT: "Development", ASPNETCORE_URLS: "http://localhost:5080" },
     detached: true,
   }),
-  Bun.spawn(["bun", "run", "--no-orphans", "--cwd", "frontend", "dev", "--", "--port", frontendPort, "--strictPort"], {
+  Bun.spawn(["bun", "run", "--no-orphans", "--cwd", frontendDirectory, "dev", "--", "--port", frontendPort, "--strictPort"], {
+    cwd: projectDirectory,
     stdin: "inherit",
     stdout: "inherit",
     stderr: "inherit",
