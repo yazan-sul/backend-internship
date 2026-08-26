@@ -1,13 +1,32 @@
 services:
+  db:
+    image: postgres:18-alpine
+    container_name: booking-system-db
+    environment:
+      POSTGRES_DB: booking_system
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "127.0.0.1:55433:5432"
+    volumes:
+      - booking-system-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d booking_system"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
   backend:
     build: ./backend
     image: booking-system-backend:latest
     container_name: booking-system-backend
     environment:
       ASPNETCORE_URLS: http://+:8080
-      Booking__DataDirectory: /app/data
+      ConnectionStrings__Database: Host=db;Port=5432;Database=booking_system;Username=postgres;Password=postgres
     ports: ["5080:8080"]
-    volumes: ["./data:/app/data"]
+    depends_on:
+      db:
+        condition: service_healthy
   frontend:
     build: ./frontend
     image: booking-system-frontend:latest
@@ -16,3 +35,6 @@ services:
     environment:
       VITE_API_PROXY_TARGET: http://backend:8080
     depends_on: [backend]
+
+volumes:
+  booking-system-data:

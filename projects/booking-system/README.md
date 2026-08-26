@@ -16,7 +16,15 @@ dotnet run --project backend/AirportTicketBookingSystem.csproj --urls http://loc
 bun run --cwd frontend dev -- --port 5173
 ```
 
-Application data is stored as JSON in `data/`. The directory can be changed with `Booking__DataDirectory` or `Booking:DataDirectory` in `backend/appsettings.json`. Missing files are initialized automatically.
+Application data is stored in PostgreSQL. The local Compose database is exposed on host port `55433`; the backend uses `Host=db;Port=5432` inside Compose and the connection string in `backend/appsettings.json` for local runs.
+
+To start the complete containerized stack:
+
+```sh
+bun run docker:up
+```
+
+The database is initialized automatically with the required tables and demo flights.
 
 Useful checks:
 
