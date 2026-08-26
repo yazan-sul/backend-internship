@@ -33,11 +33,13 @@ export function App() {
   const [tab, setTab] = useState<Tab>("search");
   const [flights, setFlights] = useState<Flight[]>([]);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("demo@skybook.test");
   const [notice, setNotice] = useState("");
   const search = async (event?: React.FormEvent) => {
     event?.preventDefault();
     setError("");
+    setLoading(true);
     try {
       const form = event?.currentTarget as HTMLFormElement | undefined;
       const params = form
@@ -46,10 +48,27 @@ export function App() {
           )
         : new URLSearchParams();
       const response = await fetch(`/api/flights?${params}`);
-      if (!response.ok) throw new Error("Could not load flights");
-      setFlights(z.array(flightSchema).parse(await response.json()));
+      const payload: unknown = await response.json();
+      if (!response.ok) {
+        if (
+          typeof payload === "object" &&
+          payload !== null &&
+          "errors" in payload &&
+          typeof payload.errors === "object" &&
+          payload.errors !== null
+        ) {
+          const messages = Object.values(payload.errors as Record<string, unknown>)
+            .flatMap((value) => (Array.isArray(value) ? value : []))
+            .filter((value): value is string => typeof value === "string");
+          throw new Error(messages.join(" ") || "Could not load flights");
+        }
+        throw new Error("Could not load flights");
+      }
+      setFlights(z.array(flightSchema).parse(payload));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Unexpected error");
+    } finally {
+      setLoading(false);
     }
   };
   useEffect(() => {
@@ -151,8 +170,33 @@ export function App() {
                 className="field"
               />
               <input name="date" type="date" className="field" />
-              <button className="rounded-lg bg-cyan-600 px-4 py-3 font-semibold text-white hover:bg-cyan-700 sm:col-span-5">
-                Search flights
+              <input
+                name="minPrice"
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="Min price"
+                className="field"
+              />
+              <input
+                name="maxPrice"
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="Max price"
+                className="field"
+              />
+              <select name="class" defaultValue="" className="field">
+                <option value="">Any class</option>
+                <option value="Economy">Economy</option>
+                <option value="Business">Business</option>
+                <option value="First">First</option>
+              </select>
+              <button
+                disabled={loading}
+                className="rounded-lg bg-cyan-600 px-4 py-3 font-semibold text-white hover:bg-cyan-700 disabled:cursor-wait disabled:opacity-60 sm:col-span-5"
+              >
+                {loading ? "Searching…" : "Search flights"}
               </button>
             </form>
             {error && <p className="mt-4 text-red-600">{error}</p>}

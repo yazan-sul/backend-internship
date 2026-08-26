@@ -1,4 +1,5 @@
 using System.Globalization;
+using AirportTicketBookingSystem.Contracts;
 using AirportTicketBookingSystem.Models;
 using AirportTicketBookingSystem.Persistence;
 
@@ -13,24 +14,58 @@ public static class FlightEndpoints
             PostgresRepository repository,
             CancellationToken ct) =>
         {
-            var flights = await repository.GetFlightsAsync(ct);
             var query = request.Query;
+            var errors = new Dictionary<string, string[]>();
 
             string? GetString(string key) =>
-                query.TryGetValue(key, out var value) ? value.ToString() : null;
-
-            decimal? GetDecimal(string key) =>
-                decimal.TryParse(GetString(key), NumberStyles.Number, CultureInfo.InvariantCulture, out var value)
-                    ? value
+                query.TryGetValue(key, out var value) && !string.IsNullOrWhiteSpace(value)
+                    ? value.ToString().Trim()
                     : null;
 
-            var departureDate = DateTime.TryParse(GetString("date"), out var parsedDate)
-                ? parsedDate.Date
-                : (DateTime?)null;
+            decimal? GetDecimal(string key)
+            {
+                var raw = GetString(key);
+                if (raw is null)
+                {
+                    return null;
+                }
 
-            var travelClass = Enum.TryParse<TravelClass>(GetString("class"), true, out var parsedClass)
-                ? parsedClass
-                : (TravelClass?)null;
+                if (decimal.TryParse(raw, NumberStyles.Number, CultureInfo.InvariantCulture, out var value) && value >= 0)
+                {
+                    return value;
+                }
+
+                errors[key] = [$"{key} must be a non-negative decimal number."];
+                return null;
+            }
+
+            DateTime? departureDate = null;
+            var rawDate = GetString("date");
+            if (rawDate is not null)
+            {
+                if (DateTime.TryParseExact(rawDate, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsedDate))
+                {
+                    departureDate = parsedDate.Date;
+                }
+                else
+                {
+                    errors["date"] = ["date must use the YYYY-MM-DD format."];
+                }
+            }
+
+            TravelClass? travelClass = null;
+            var rawClass = GetString("class");
+            if (rawClass is not null)
+            {
+                if (Enum.TryParse<TravelClass>(rawClass, true, out var parsedClass) && Enum.IsDefined(parsedClass))
+                {
+                    travelClass = parsedClass;
+                }
+                else
+                {
+                    errors["class"] = ["class must be Economy, Business, or First."];
+                }
+            }
 
             var departureCountry = GetString("departureCountry");
             var destinationCountry = GetString("destinationCountry");
@@ -39,6 +74,18 @@ public static class FlightEndpoints
             var minPrice = GetDecimal("minPrice");
             var maxPrice = GetDecimal("maxPrice");
 
+            if (minPrice.HasValue && maxPrice.HasValue && minPrice > maxPrice)
+            {
+                errors["price"] = ["minPrice must be less than or equal to maxPrice."];
+            }
+
+            if (errors.Count > 0)
+            {
+                return Results.ValidationProblem(errors);
+            }
+
+            var flights = await repository.GetFlightsAsync(ct);
+
             var results = flights
                 .Where(flight =>
                     (departureCountry is null || flight.DepartureCountry.Equals(departureCountry, StringComparison.OrdinalIgnoreCase)) &&
@@ -46,15 +93,14 @@ public static class FlightEndpoints
                     (departureAirport is null || flight.DepartureAirport.Equals(departureAirport, StringComparison.OrdinalIgnoreCase)) &&
                     (arrivalAirport is null || flight.ArrivalAirport.Equals(arrivalAirport, StringComparison.OrdinalIgnoreCase)) &&
                     (!departureDate.HasValue || flight.DepartureAt.Date == departureDate) &&
-                    (!minPrice.HasValue || flight.EconomyPrice >= minPrice) &&
-                    (!maxPrice.HasValue || flight.EconomyPrice <= maxPrice) &&
+                    (!minPrice.HasValue || PriceFor(flight, travelClass) >= minPrice) &&
+                    (!maxPrice.HasValue || PriceFor(flight, travelClass) <= maxPrice) &&
                     (!travelClass.HasValue || flight.Remaining(travelClass.Value) > 0))
                 .Where(flight => flight.DepartureAt > DateTime.UtcNow)
                 .OrderBy(flight => flight.DepartureAt)
                 .ToList();
 
-            return Results.Ok(results.Select(flight => new
-            {
+            return Results.Ok(results.Select(flight => new FlightSearchResult(
                 flight.Id,
                 flight.Code,
                 flight.DepartureCountry,
@@ -62,21 +108,17 @@ public static class FlightEndpoints
                 flight.DepartureAirport,
                 flight.ArrivalAirport,
                 flight.DepartureAt,
-                prices = new
-                {
-                    economy = flight.EconomyPrice,
-                    business = flight.BusinessPrice,
-                    first = flight.FirstPrice
-                },
-                availability = new
-                {
-                    economy = flight.EconomyRemaining,
-                    business = flight.BusinessRemaining,
-                    first = flight.FirstRemaining
-                }
-            }));
+                new FlightPrices(flight.EconomyPrice, flight.BusinessPrice, flight.FirstPrice),
+                new FlightAvailability(flight.EconomyRemaining, flight.BusinessRemaining, flight.FirstRemaining))));
         });
 
         return endpoints;
     }
+
+    private static decimal PriceFor(Flight flight, TravelClass? travelClass) => travelClass switch
+    {
+        TravelClass.Business => flight.BusinessPrice,
+        TravelClass.First => flight.FirstPrice,
+        _ => flight.EconomyPrice
+    };
 }
