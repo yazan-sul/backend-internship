@@ -38,3 +38,13 @@ curl http://localhost:5080/api/health
 ```
 
 The health endpoint reports the backend and PostgreSQL status. The PostgreSQL volume is named `booking-system-data`; remove it only when you intentionally want to reset local application data.
+
+## Flight CSV import
+
+Managers can upload a CSV from the Manager tab. The first row may contain this header, in this exact order:
+
+```text
+code,departureCountry,destinationCountry,departureAirport,arrivalAirport,departureAt,economyPrice,businessPrice,firstPrice,economyCapacity,businessCapacity,firstCapacity
+```
+
+Use ISO date/time values such as `2026-09-15T14:30:00Z`, invariant decimal values such as `250.00`, and non-negative whole-number capacities. Quoted fields and commas inside quoted fields are supported. Imports are all-or-nothing: if any row fails validation, no flights from that file are saved. Errors report the row, field, rejected value, and reason.

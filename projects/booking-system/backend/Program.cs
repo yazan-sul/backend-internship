@@ -17,6 +17,7 @@ builder.Services.AddSingleton(NpgsqlDataSource.Create(connectionString));
 builder.Services.AddSingleton<MigrationRunner>();
 builder.Services.AddSingleton<PostgresRepository>();
 builder.Services.AddSingleton<BookingService>();
+builder.Services.AddSingleton<ImportService>();
 builder.Services.AddSingleton<ValidationMetadataProvider>();
 
 var app = builder.Build();

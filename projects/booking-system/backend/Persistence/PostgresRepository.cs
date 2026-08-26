@@ -271,12 +271,15 @@ public sealed class PostgresRepository(NpgsqlDataSource dataSource)
 
     public async Task AddFlightsAsync(IEnumerable<Flight> flights, CancellationToken ct = default)
     {
+        await using var connection = await dataSource.OpenConnectionAsync(ct);
+        await using var transaction = await connection.BeginTransactionAsync(ct);
         foreach (var flight in flights)
         {
-            await using var command = dataSource.CreateCommand("INSERT INTO flights VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)");
+            await using var command = new NpgsqlCommand("INSERT INTO flights VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)", connection, transaction);
             AddFlight(command, flight);
             await command.ExecuteNonQueryAsync(ct);
         }
+        await transaction.CommitAsync(ct);
     }
 
     private static void AddFlight(NpgsqlCommand command, Flight flight)

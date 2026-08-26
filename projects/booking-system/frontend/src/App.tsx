@@ -487,6 +487,9 @@ function Manager() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [hasSearched, setHasSearched] = useState(false);
+  const [file, setFile] = useState<File | null>(null);
+  const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState<any | null>(null);
 
   async function search(event?: React.FormEvent) {
     event?.preventDefault();
@@ -521,12 +524,65 @@ function Manager() {
     void search();
   }, []);
 
+  async function importFlights(event: React.FormEvent) {
+    event.preventDefault();
+    if (!file) return;
+    setImporting(true);
+    setImportResult(null);
+    setError("");
+    try {
+      const body = new FormData();
+      body.append("file", file);
+      const response = await fetch("/api/manager/flights/import", {
+        method: "POST",
+        body,
+      });
+      const data = await response.json();
+      if (!response.ok && !data.errors) throw new Error(data.message ?? "Could not import flights");
+      setImportResult(data);
+      if (response.ok) {
+        setFile(null);
+        void search();
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not import flights");
+    } finally {
+      setImporting(false);
+    }
+  }
+
   return (
     <section>
       <h2 className="heading">Manager overview</h2>
       <p className="mt-2 text-slate-500">
         All passenger bookings, including cancelled history.
       </p>
+      <form onSubmit={importFlights} className="card mt-6 border border-dashed border-cyan-200">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h3 className="font-bold">Import flights from CSV</h3>
+            <p className="mt-1 text-sm text-slate-500">Upload the documented 12-column flight format.</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <input type="file" accept=".csv,text/csv" onChange={(event) => setFile(event.target.files?.[0] ?? null)} className="field max-w-xs" />
+            <button disabled={!file || importing} className="rounded-lg bg-cyan-600 px-4 py-3 font-semibold text-white hover:bg-cyan-700 disabled:opacity-50">
+              {importing ? "Importing…" : "Import CSV"}
+            </button>
+          </div>
+        </div>
+        {importResult && (
+          <div className={`mt-4 rounded-lg p-4 text-sm ${importResult.errors?.length ? "bg-amber-50 text-amber-900" : "bg-emerald-50 text-emerald-800"}`}>
+            <p className="font-semibold">{importResult.errors?.length ? "Import rejected — no flights were added." : `${importResult.imported} flight${importResult.imported === 1 ? "" : "s"} imported successfully.`}</p>
+            {importResult.errors?.length > 0 && (
+              <div className="mt-3 grid gap-2">
+                {importResult.errors.map((item: any, index: number) => (
+                  <p key={`${item.row}-${item.field}-${index}`}><strong>Row {item.row}, {item.field}:</strong> {item.message}{item.value ? ` (${item.value})` : ""}</p>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </form>
       <form onSubmit={search} className="card mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <input name="flight" placeholder="Flight code" className="field" />
         <input name="passenger" placeholder="Passenger name or contact" className="field" />
