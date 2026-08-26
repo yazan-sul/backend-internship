@@ -28,13 +28,32 @@ const money = (n: number) =>
   );
 const date = (s: string) =>
   new Date(s).toLocaleString([], { dateStyle: "medium", timeStyle: "short" });
+const passengerCookie = "skybook.passengerId";
+const readCookie = (name: string) => {
+  const value = document.cookie
+    .split("; ")
+    .find((cookie) => cookie.startsWith(`${name}=`))
+    ?.slice(name.length + 1);
+  return value ? decodeURIComponent(value) : null;
+};
+const writeCookie = (name: string, value: string) => {
+  const secure = window.location.protocol === "https:" ? "; Secure" : "";
+  document.cookie = `${name}=${encodeURIComponent(value)}; Max-Age=31536000; Path=/; SameSite=Lax${secure}`;
+};
+const removeCookie = (name: string) => {
+  document.cookie = `${name}=; Max-Age=0; Path=/; SameSite=Lax`;
+};
 
 export function App() {
   const [tab, setTab] = useState<Tab>("search");
   const [flights, setFlights] = useState<Flight[]>([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [email, setEmail] = useState("demo@skybook.test");
+  const [passengerName, setPassengerName] = useState("Demo Passenger");
+  const [contactDetails, setContactDetails] = useState("demo@skybook.test");
+  const [passengerId, setPassengerId] = useState<string | null>(() =>
+    readCookie(passengerCookie),
+  );
   const [notice, setNotice] = useState("");
   const search = async (event?: React.FormEvent) => {
     event?.preventDefault();
@@ -74,25 +93,50 @@ export function App() {
   useEffect(() => {
     void search();
   }, []);
-  async function book(flight: Flight, cls: string, price: number) {
-    const response = await fetch("/api/bookings", {
+  async function ensurePassenger() {
+    if (passengerId) return passengerId;
+
+    const response = await fetch("/api/passengers", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        flightId: flight.id,
-        class: cls,
-        name: "Demo Passenger",
-        email,
-        contactDetails: "Email",
+        name: passengerName,
+        contactDetails,
       }),
     });
     const data = await response.json();
-    setNotice(
-      response.ok
-        ? `Booking confirmed: ${data.booking.id} · ${money(price)}`
-        : data.message,
-    );
-    if (response.ok) void search();
+    if (!response.ok || typeof data.id !== "string") {
+      throw new Error(data.message ?? "Could not create passenger identity");
+    }
+
+    writeCookie(passengerCookie, data.id);
+    setPassengerId(data.id);
+    return data.id;
+  }
+
+  async function book(flight: Flight, cls: string, price: number) {
+    setNotice("");
+    try {
+      const id = await ensurePassenger();
+      const response = await fetch("/api/bookings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          passengerId: id,
+          flightId: flight.id,
+          class: cls,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message ?? "Could not create booking");
+
+      setNotice(
+        `Booking confirmed: ${data.booking.id} · ${flight.code} · ${cls} · ${money(price)} · ${date(flight.departureAt)}`,
+      );
+      void search();
+    } catch (e) {
+      setNotice(e instanceof Error ? e.message : "Could not create booking");
+    }
   }
   return (
     <div className="min-h-screen bg-[#f5f7fb] text-slate-900">
@@ -105,10 +149,25 @@ export function App() {
             <h1 className="mt-1 text-2xl font-bold">Travel farther, simply.</h1>
           </div>
           <label className="text-sm text-slate-300">
-            Passenger email{" "}
+            Passenger details{" "}
             <input
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              value={passengerName}
+              onChange={(e) => {
+                removeCookie(passengerCookie);
+                setPassengerId(null);
+                setPassengerName(e.target.value);
+              }}
+              placeholder="Name"
+              className="ml-2 w-36 rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-white"
+            />
+            <input
+              value={contactDetails}
+              onChange={(e) => {
+                removeCookie(passengerCookie);
+                setPassengerId(null);
+                setContactDetails(e.target.value);
+              }}
+              placeholder="Contact details"
               className="ml-2 rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-white"
             />
           </label>
@@ -261,22 +320,79 @@ export function App() {
             </div>
           </>
         )}
-        {tab === "bookings" && <Bookings email={email} />}
+        {tab === "bookings" && <Bookings passengerId={passengerId} />}
         {tab === "manager" && <Manager />}
       </main>
     </div>
   );
 }
-function Bookings({ email }: { email: string }) {
+function Bookings({ passengerId }: { passengerId: string | null }) {
   const [items, setItems] = useState<any[]>([]);
+  const [availableFlights, setAvailableFlights] = useState<Flight[]>([]);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editFlightId, setEditFlightId] = useState("");
+  const [editClass, setEditClass] = useState("Economy");
+  const [message, setMessage] = useState("");
   useEffect(() => {
-    fetch(`/api/bookings/me?email=${encodeURIComponent(email)}`)
+    if (!passengerId) {
+      setItems([]);
+      return;
+    }
+    fetch(`/api/bookings/me?passengerId=${encodeURIComponent(passengerId)}`)
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error("Could not load bookings"))))
+      .then(setItems)
+      .catch(() => setItems([]));
+    fetch("/api/flights")
       .then((r) => r.json())
-      .then(setItems);
-  }, [email]);
+      .then((data) => setAvailableFlights(z.array(flightSchema).parse(data)))
+      .catch(() => setAvailableFlights([]));
+  }, [passengerId]);
+
+  async function cancel(id: string) {
+    if (!passengerId || !window.confirm("Cancel this booking?")) return;
+    setMessage("");
+    const response = await fetch(`/api/bookings/${id}/cancel?passengerId=${passengerId}`, {
+      method: "POST",
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      setMessage(data.message ?? "Could not cancel booking");
+      return;
+    }
+    setItems((current) =>
+      current.map((item) =>
+        item.booking.id === id ? { ...item, booking: data } : item,
+      ),
+    );
+  }
+
+  async function modify(id: string) {
+    if (!passengerId || !editFlightId) return;
+    setMessage("");
+    const response = await fetch(`/api/bookings/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        passengerId,
+        flightId: editFlightId,
+        class: editClass,
+      }),
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      setMessage(data.message ?? "Could not modify booking");
+      return;
+    }
+    setItems((current) =>
+      current.map((item) => (item.booking.id === id ? data : item)),
+    );
+    setEditingId(null);
+  }
+
   return (
     <section>
       <h2 className="heading">My bookings</h2>
+      {message && <p className="mt-4 text-red-600">{message}</p>}
       <div className="mt-6 grid gap-3">
         {items.length === 0 ? (
           <div className="card text-slate-500">
@@ -284,10 +400,8 @@ function Bookings({ email }: { email: string }) {
           </div>
         ) : (
           items.map((x) => (
-            <div
-              className="card flex items-center justify-between"
-              key={x.booking.id}
-            >
+            <div className="card" key={x.booking.id}>
+              <div className="flex items-center justify-between gap-4">
               <div>
                 <p className="font-bold">
                   {x.flight?.code} · {x.booking.class}
@@ -302,6 +416,65 @@ function Bookings({ email }: { email: string }) {
               >
                 {x.booking.status}
               </span>
+              </div>
+              {x.booking.status === "Active" && (
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <button
+                    onClick={() => void cancel(x.booking.id)}
+                    className="rounded-lg border border-red-200 px-3 py-2 text-sm font-semibold text-red-700 hover:bg-red-50"
+                  >
+                    Cancel booking
+                  </button>
+                  {editingId === x.booking.id ? (
+                    <>
+                      <select
+                        value={editFlightId}
+                        onChange={(event) => setEditFlightId(event.target.value)}
+                        className="field"
+                      >
+                        <option value="">Choose flight</option>
+                        {availableFlights.map((flight) => (
+                          <option key={flight.id} value={flight.id}>
+                            {flight.code} · {flight.departureAirport} → {flight.arrivalAirport}
+                          </option>
+                        ))}
+                      </select>
+                      <select
+                        value={editClass}
+                        onChange={(event) => setEditClass(event.target.value)}
+                        className="field"
+                      >
+                        <option>Economy</option>
+                        <option>Business</option>
+                        <option>First</option>
+                      </select>
+                      <button
+                        onClick={() => void modify(x.booking.id)}
+                        className="rounded-lg bg-cyan-600 px-3 py-2 text-sm font-semibold text-white"
+                      >
+                        Save changes
+                      </button>
+                      <button
+                        onClick={() => setEditingId(null)}
+                        className="rounded-lg border px-3 py-2 text-sm"
+                      >
+                        Close
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        setEditingId(x.booking.id);
+                        setEditFlightId(x.booking.flightId);
+                        setEditClass(x.booking.class);
+                      }}
+                      className="rounded-lg border border-cyan-200 px-3 py-2 text-sm font-semibold text-cyan-700 hover:bg-cyan-50"
+                    >
+                      Modify booking
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           ))
         )}

@@ -31,4 +31,22 @@ public sealed class BookingService(PostgresRepository repository)
 
     public async Task<object?> CancelAsync(Guid id, Guid passengerId, CancellationToken ct)
         => await repository.CancelBookingAsync(id, passengerId, ct);
+
+    public async Task<object?> ModifyAsync(Guid id, ModifyBookingRequest request, CancellationToken ct)
+    {
+        var booking = await repository.ModifyBookingAsync(id, request, ct);
+        if (booking is null)
+        {
+            return null;
+        }
+
+        var flights = await repository.GetFlightsAsync(ct);
+        var passengers = await repository.GetPassengersAsync(ct);
+        return new
+        {
+            booking,
+            flight = flights.FirstOrDefault(flight => flight.Id == booking.FlightId),
+            passenger = passengers.FirstOrDefault(passenger => passenger.Id == booking.PassengerId)
+        };
+    }
 }

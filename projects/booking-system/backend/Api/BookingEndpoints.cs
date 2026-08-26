@@ -45,6 +45,25 @@ public static class BookingEndpoints
                 }));
         });
 
+        endpoints.MapPut("/api/bookings/{id:guid}", async (
+            Guid id,
+            ModifyBookingRequest request,
+            BookingService service,
+            CancellationToken ct) =>
+        {
+            try
+            {
+                var result = await service.ModifyAsync(id, request, ct);
+                return result is null
+                    ? Results.NotFound(new { message = "Booking not found." })
+                    : Results.Ok(result);
+            }
+            catch (InvalidOperationException exception)
+            {
+                return Results.BadRequest(new { message = exception.Message });
+            }
+        });
+
         endpoints.MapPost("/api/bookings/{id:guid}/cancel", async (
             Guid id,
             Guid passengerId,
