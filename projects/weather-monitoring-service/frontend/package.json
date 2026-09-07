@@ -12,8 +12,7 @@
     "@vitejs/plugin-react": "latest",
     "vite": "latest",
     "react": "latest",
-    "react-dom": "latest",
-    "zod": "latest"
+    "react-dom": "latest"
   },
   "devDependencies": {
     "@types/react": "latest",
