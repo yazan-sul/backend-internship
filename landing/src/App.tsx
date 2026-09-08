@@ -137,7 +137,7 @@ export function App() {
   const controlsDisabled = !workspace || workspace.dirty || Boolean(workspace.switchingTo);
 
   return (
-    <main className="relative grid min-h-screen overflow-hidden bg-slate-950 px-6 py-16 text-white">
+    <main className="relative grid min-h-screen overflow-hidden bg-[#102a43] px-6 py-16 text-white">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(34,211,238,0.16),transparent_35%),radial-gradient(circle_at_bottom_left,rgba(99,102,241,0.18),transparent_35%)]" />
       <section className="relative m-auto w-full max-w-5xl">
         <p className="text-sm font-bold uppercase tracking-[0.3em] text-cyan-300">Backend Internship</p>

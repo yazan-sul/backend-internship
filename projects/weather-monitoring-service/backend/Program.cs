@@ -1,5 +1,6 @@
-using WeatherMonitoringService.Configuration;
+using WeatherMonitoringService.Api;
 using WeatherMonitoringService.Bots;
+using WeatherMonitoringService.Configuration;
 using WeatherMonitoringService.Monitoring;
 using WeatherMonitoringService.Parsing;
 
@@ -18,10 +19,18 @@ public partial class Program
         builder.Services.AddSingleton<IWeatherObserver, SunBot>();
         builder.Services.AddSingleton<IWeatherObserver, SnowBot>();
         builder.Services.AddSingleton<WeatherMonitor>();
+        builder.Services.AddExceptionHandler<ApiExceptionHandler>();
+        builder.Services.AddProblemDetails();
+        builder.Services.Configure<RouteHandlerOptions>(options =>
+            options.ThrowOnBadRequest = true
+        );
 
         var app = builder.Build();
 
+        app.UseExceptionHandler();
+
         app.MapGet("/api/health", () => Results.Ok(new { status = "healthy" }));
+        app.MapWeatherUpdateEndpoint();
 
         app.Run();
     }
