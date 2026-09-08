@@ -9,6 +9,7 @@ public sealed class JsonWeatherDataParserTests
     [Fact]
     public void CanHandle_RecognizesJsonAfterWhitespace()
     {
+        // Act & Assert
         Assert.True(_parser.CanHandle("  \n {\"Location\":\"Ramallah\"}"));
         Assert.True(_parser.CanHandle("\t[1, 2]"));
         Assert.False(_parser.CanHandle("<WeatherData />"));
@@ -17,6 +18,7 @@ public sealed class JsonWeatherDataParserTests
     [Fact]
     public void Parse_ReturnsWeatherData_ForValidJson()
     {
+        // Arrange
         const string rawData =
             """
             {
@@ -27,8 +29,10 @@ public sealed class JsonWeatherDataParserTests
             }
             """;
 
+        // Act
         var weather = _parser.Parse(rawData);
 
+        // Assert
         Assert.Equal("Ramallah", weather.Location);
         Assert.Equal(24.5, weather.Temperature);
         Assert.Equal(61, weather.Humidity);
@@ -40,6 +44,7 @@ public sealed class JsonWeatherDataParserTests
     [InlineData("{\"Location\": 123, \"Temperature\": 20, \"Humidity\": 50}")]
     public void Parse_RejectsMalformedOrWronglyTypedJson(string rawData)
     {
+        // Act & Assert
         var exception = Assert.Throws<WeatherDataParsingException>(() => _parser.Parse(rawData));
 
         Assert.Contains("JSON", exception.Message);
@@ -52,6 +57,7 @@ public sealed class JsonWeatherDataParserTests
     [InlineData("{\"location\":\"Ramallah\",\"Temperature\":20,\"Humidity\":50}")]
     public void Parse_RejectsMissingRequiredProperties(string rawData)
     {
+        // Act & Assert
         var exception = Assert.Throws<WeatherDataParsingException>(() => _parser.Parse(rawData));
 
         Assert.Contains("must include", exception.Message);
@@ -63,6 +69,7 @@ public sealed class JsonWeatherDataParserTests
     [InlineData("{\"Location\":\"Ramallah\",\"Temperature\":1e400,\"Humidity\":50}")]
     public void Parse_RejectsInvalidWeatherValues(string rawData)
     {
+        // Act & Assert
         var exception = Assert.Throws<WeatherDataParsingException>(() => _parser.Parse(rawData));
 
         Assert.Contains("JSON", exception.Message);

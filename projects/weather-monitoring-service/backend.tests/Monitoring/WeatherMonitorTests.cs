@@ -8,13 +8,16 @@ public sealed class WeatherMonitorTests
     [Fact]
     public void Publish_ReturnsEveryActivation_InObserverRegistrationOrder()
     {
+        // Arrange
         var first = new StubObserver(new BotActivation("FirstBot", "First message"));
         var inactive = new StubObserver(null);
         var second = new StubObserver(new BotActivation("SecondBot", "Second message"));
         var monitor = new WeatherMonitor([first, inactive, second]);
 
+        // Act
         var activations = monitor.Publish(new WeatherData("Test City", 20, 50));
 
+        // Assert
         Assert.Collection(
             activations,
             activation => Assert.Equal("FirstBot", activation.Bot),
@@ -25,10 +28,13 @@ public sealed class WeatherMonitorTests
     [Fact]
     public void Publish_ReturnsEmptyResult_WhenNoObserverActivates()
     {
+        // Arrange
         var monitor = new WeatherMonitor([new StubObserver(null)]);
 
+        // Act
         var activations = monitor.Publish(new WeatherData("Test City", 20, 50));
 
+        // Assert
         Assert.Empty(activations);
     }
 
