@@ -1,4 +1,6 @@
 using WeatherMonitoringService.Configuration;
+using WeatherMonitoringService.Bots;
+using WeatherMonitoringService.Monitoring;
 using WeatherMonitoringService.Parsing;
 
 namespace WeatherMonitoringService;
@@ -12,6 +14,10 @@ public partial class Program
         builder.Services.AddSingleton<IWeatherDataParser, JsonWeatherDataParser>();
         builder.Services.AddSingleton<IWeatherDataParser, XmlWeatherDataParser>();
         builder.Services.AddSingleton<WeatherDataParserCoordinator>();
+        builder.Services.AddSingleton<IWeatherObserver, RainBot>();
+        builder.Services.AddSingleton<IWeatherObserver, SunBot>();
+        builder.Services.AddSingleton<IWeatherObserver, SnowBot>();
+        builder.Services.AddSingleton<WeatherMonitor>();
 
         var app = builder.Build();
 
