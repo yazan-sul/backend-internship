@@ -25,9 +25,9 @@ public static class WeatherBotOptionsRegistration
             .Bind(configuration.GetRequiredSection(SnowBotOptions.SectionName))
             .ValidateOnStart();
 
-        services.AddSingleton<IValidateOptions<RainBotOptions>, WeatherBotOptionsValidator>();
-        services.AddSingleton<IValidateOptions<SunBotOptions>, WeatherBotOptionsValidator>();
-        services.AddSingleton<IValidateOptions<SnowBotOptions>, WeatherBotOptionsValidator>();
+        services.AddSingleton<IValidateOptions<RainBotOptions>, RainBotOptionsValidator>();
+        services.AddSingleton<IValidateOptions<SunBotOptions>, SunBotOptionsValidator>();
+        services.AddSingleton<IValidateOptions<SnowBotOptions>, SnowBotOptionsValidator>();
 
         return services;
     }
