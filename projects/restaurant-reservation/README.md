@@ -11,7 +11,7 @@ A self-contained restaurant operations project built with React, Vite, Tailwind 
 
 ## Design documentation
 
-- [Entity relationship diagram](docs/erd/resturant.drawio.png)
+- [Entity relationship diagram](docs/erd/restaurant-erd.png)
 - [PostgreSQL schema](database/01-schema.sql)
 - [Schema validation](database/tests/01-schema-validation.sql)
 - [Implementation plan](PLAN.md)

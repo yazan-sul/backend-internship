@@ -106,8 +106,7 @@ Seeded order totals will be calculated from their order items so the data remain
 Create:
 
 ```text
-docs/erd/restaurant-reservation-erd.mmd
-docs/erd/restaurant-reservation-erd.svg
+docs/erd/restaurant-erd.png
 ```
 
 The rendered diagram will display attributes, primary keys, foreign keys, relationship names, connectivity, and cardinality.
