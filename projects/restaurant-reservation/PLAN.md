@@ -34,7 +34,7 @@ The following assignment wording appears to have been copied from another projec
 - Preserve the existing ports unless conflicts are found:
   - Frontend: `5173`
   - Backend: `5080`
-  - PostgreSQL host port: `55432`
+  - PostgreSQL host port: `55435`
 
 ## 2. Application architecture
 
