@@ -98,6 +98,7 @@ Constraints will include:
 - Order items must reference menu items from the same restaurant.
 - Duplicate table reservations at the same date and time are prevented.
 - Monetary values use `numeric(12,2)`.
+- Each order item stores `unit_price` so historical totals remain correct when menu prices change.
 
 Seeded order totals will be calculated from their order items so the data remains internally consistent.
 
@@ -115,7 +116,6 @@ The rendered diagram will display attributes, primary keys, foreign keys, relati
 
 ```text
 database/
-|-- 00-create-database.sql
 |-- 01-schema.sql
 |-- 02-seed.sql
 |-- queries/
