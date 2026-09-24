@@ -1,0 +1,148 @@
+                                                                                QUERY PLAN                                                                                
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=46.44..46.46 rows=6 width=40) (actual time=0.086..0.087 rows=6.00 loops=1)
+   Sort Key: restaurant_order.order_date, restaurant_order.order_id, order_item.order_item_id
+   Sort Method: quicksort  Memory: 25kB
+   Buffers: shared hit=36
+   ->  Nested Loop  (cost=0.83..46.37 rows=6 width=40) (actual time=0.039..0.061 rows=6.00 loops=1)
+         Buffers: shared hit=30
+         ->  Nested Loop  (cost=0.55..44.53 rows=6 width=40) (actual time=0.034..0.053 rows=6.00 loops=1)
+               Buffers: shared hit=17
+               ->  Nested Loop  (cost=0.27..22.56 rows=2 width=22) (actual time=0.027..0.043 rows=2.00 loops=1)
+                     Buffers: shared hit=11
+                     ->  Index Only Scan using pk_reservations on reservations reservation  (cost=0.27..8.29 rows=1 width=4) (actual time=0.018..0.019 rows=1.00 loops=1)
+                           Index Cond: (reservation_id = 1)
+                           Heap Fetches: 1
+                           Index Searches: 1
+                           Buffers: shared hit=3
+                     ->  Seq Scan on orders restaurant_order  (cost=0.00..14.25 rows=2 width=22) (actual time=0.008..0.023 rows=2.00 loops=1)
+                           Filter: (reservation_id = 1)
+                           Rows Removed by Filter: 498
+                           Buffers: shared hit=8
+               ->  Index Scan using uq_order_items_order_item on order_items order_item  (cost=0.28..10.96 rows=3 width=22) (actual time=0.003..0.004 rows=3.00 loops=2)
+                     Index Cond: (order_id = restaurant_order.order_id)
+                     Index Searches: 2
+                     Buffers: shared hit=6
+         ->  Index Only Scan using pk_menu_items on menu_items menu_item  (cost=0.28..0.31 rows=1 width=4) (actual time=0.001..0.001 rows=1.00 loops=6)
+               Index Cond: (item_id = order_item.item_id)
+               Heap Fetches: 0
+               Index Searches: 6
+               Buffers: shared hit=13
+ Planning:
+   Buffers: shared hit=262
+ Planning Time: 0.767 ms
+ Execution Time: 0.156 ms
+(32 rows)
+
+                                                                                QUERY PLAN                                                                                
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=57.09..57.42 rows=133 width=101) (actual time=0.491..0.496 rows=100.00 loops=1)
+   Sort Key: order_summary.order_count DESC, order_summary.total_spent DESC, reservation.reservation_id
+   Sort Method: quicksort  Memory: 32kB
+   Buffers: shared hit=27
+   ->  Hash Join  (cost=39.85..52.40 rows=133 width=101) (actual time=0.353..0.432 rows=100.00 loops=1)
+         Hash Cond: (reservation.restaurant_id = restaurant.restaurant_id)
+         Buffers: shared hit=21
+         ->  Hash Join  (cost=37.73..49.56 rows=133 width=68) (actual time=0.319..0.373 rows=100.00 loops=1)
+               Hash Cond: (customer.customer_id = reservation.customer_id)
+               Buffers: shared hit=17
+               ->  Seq Scan on customers customer  (cost=0.00..9.00 rows=400 width=16) (actual time=0.004..0.025 rows=400.00 loops=1)
+                     Buffers: shared hit=5
+               ->  Hash  (cost=36.07..36.07 rows=133 width=60) (actual time=0.310..0.311 rows=100.00 loops=1)
+                     Buckets: 1024  Batches: 1  Memory Usage: 16kB
+                     Buffers: shared hit=12
+                     ->  Hash Join  (cost=25.74..36.07 rows=133 width=60) (actual time=0.235..0.298 rows=100.00 loops=1)
+                           Hash Cond: (reservation.reservation_id = order_summary.reservation_id)
+                           Buffers: shared hit=12
+                           ->  Seq Scan on reservations reservation  (cost=0.00..9.00 rows=500 width=20) (actual time=0.003..0.027 rows=500.00 loops=1)
+                                 Buffers: shared hit=4
+                           ->  Hash  (cost=24.08..24.08 rows=133 width=44) (actual time=0.224..0.224 rows=100.00 loops=1)
+                                 Buckets: 1024  Batches: 1  Memory Usage: 14kB
+                                 Buffers: shared hit=8
+                                 ->  Subquery Scan on order_summary  (cost=16.75..24.08 rows=133 width=44) (actual time=0.150..0.208 rows=100.00 loops=1)
+                                       Buffers: shared hit=8
+                                       ->  HashAggregate  (cost=16.75..22.75 rows=133 width=44) (actual time=0.149..0.199 rows=100.00 loops=1)
+                                             Group Key: restaurant_order.reservation_id
+                                             Filter: (count(restaurant_order.order_id) >= 2)
+                                             Batches: 1  Memory Usage: 192kB
+                                             Rows Removed by Filter: 300
+                                             Buffers: shared hit=8
+                                             ->  Seq Scan on orders restaurant_order  (cost=0.00..13.00 rows=500 width=14) (actual time=0.002..0.024 rows=500.00 loops=1)
+                                                   Buffers: shared hit=8
+         ->  Hash  (cost=1.50..1.50 rows=50 width=17) (actual time=0.016..0.017 rows=50.00 loops=1)
+               Buckets: 1024  Batches: 1  Memory Usage: 11kB
+               Buffers: shared hit=1
+               ->  Seq Scan on restaurants restaurant  (cost=0.00..1.50 rows=50 width=17) (actual time=0.004..0.007 rows=50.00 loops=1)
+                     Buffers: shared hit=1
+ Planning:
+   Buffers: shared hit=136
+ Planning Time: 0.402 ms
+ Execution Time: 0.573 ms
+(42 rows)
+
+                                                                                           QUERY PLAN                                                                                            
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=125.60..125.61 rows=2 width=42) (actual time=0.680..0.684 rows=100.00 loops=1)
+   Sort Key: ranked_items.restaurant_name, ranked_items.menu_item_name
+   Sort Method: quicksort  Memory: 31kB
+   Buffers: shared hit=39
+   ->  Subquery Scan on ranked_items  (cost=115.86..125.59 rows=2 width=42) (actual time=0.558..0.638 rows=100.00 loops=1)
+         Filter: (ranked_items.popularity_rank = 1)
+         Buffers: shared hit=36
+         ->  WindowAgg  (cost=115.86..121.84 rows=300 width=50) (actual time=0.557..0.631 rows=100.00 loops=1)
+               Window: w1 AS (PARTITION BY item_sales.restaurant_id ORDER BY item_sales.quantity_sold ROWS UNBOUNDED PRECEDING)
+               Run Condition: (dense_rank() OVER w1 <= 1)
+               Storage: Memory  Maximum Storage: 17kB
+               Buffers: shared hit=36
+               ->  Subquery Scan on item_sales  (cost=115.84..116.59 rows=300 width=42) (actual time=0.554..0.583 rows=300.00 loops=1)
+                     Buffers: shared hit=36
+                     ->  Sort  (cost=115.84..116.59 rows=300 width=42) (actual time=0.553..0.562 rows=300.00 loops=1)
+                           Sort Key: restaurant.restaurant_id, (sum(order_item.quantity)) DESC
+                           Sort Method: quicksort  Memory: 43kB
+                           Buffers: shared hit=36
+                           ->  HashAggregate  (cost=100.50..103.50 rows=300 width=42) (actual time=0.473..0.498 rows=300.00 loops=1)
+                                 Group Key: restaurant.restaurant_id, menu_item.item_id
+                                 Batches: 1  Memory Usage: 72kB
+                                 Buffers: shared hit=36
+                                 ->  Hash Join  (cost=66.85..98.25 rows=300 width=38) (actual time=0.277..0.436 rows=300.00 loops=1)
+                                       Hash Cond: (reservation.restaurant_id = restaurant.restaurant_id)
+                                       Buffers: shared hit=36
+                                       ->  Hash Join  (cost=64.72..95.27 rows=300 width=25) (actual time=0.260..0.393 rows=300.00 loops=1)
+                                             Hash Cond: (restaurant_order.reservation_id = reservation.reservation_id)
+                                             Buffers: shared hit=35
+                                             ->  Hash Join  (cost=49.47..79.22 rows=300 width=25) (actual time=0.200..0.304 rows=300.00 loops=1)
+                                                   Hash Cond: (menu_item.item_id = order_item.item_id)
+                                                   Buffers: shared hit=31
+                                                   ->  Seq Scan on menu_items menu_item  (cost=0.00..23.00 rows=1000 width=17) (actual time=0.002..0.037 rows=1000.00 loops=1)
+                                                         Buffers: shared hit=13
+                                                   ->  Hash  (cost=45.72..45.72 rows=300 width=12) (actual time=0.193..0.194 rows=300.00 loops=1)
+                                                         Buckets: 1024  Batches: 1  Memory Usage: 21kB
+                                                         Buffers: shared hit=18
+                                                         ->  Hash Join  (cost=16.75..45.72 rows=300 width=12) (actual time=0.042..0.172 rows=300.00 loops=1)
+                                                               Hash Cond: (order_item.order_id = restaurant_order.order_id)
+                                                               Buffers: shared hit=18
+                                                               ->  Seq Scan on order_items order_item  (cost=0.00..25.00 rows=1500 width=12) (actual time=0.001..0.052 rows=1500.00 loops=1)
+                                                                     Buffers: shared hit=10
+                                                               ->  Hash  (cost=15.50..15.50 rows=100 width=8) (actual time=0.034..0.034 rows=100.00 loops=1)
+                                                                     Buckets: 1024  Batches: 1  Memory Usage: 12kB
+                                                                     Buffers: shared hit=8
+                                                                     ->  Seq Scan on orders restaurant_order  (cost=0.00..15.50 rows=100 width=8) (actual time=0.003..0.026 rows=100.00 loops=1)
+                                                                           Filter: ((order_date >= '2026-09-01'::date) AND (order_date < '2026-10-01'::date))
+                                                                           Rows Removed by Filter: 400
+                                                                           Buffers: shared hit=8
+                                             ->  Hash  (cost=9.00..9.00 rows=500 width=8) (actual time=0.056..0.056 rows=500.00 loops=1)
+                                                   Buckets: 1024  Batches: 1  Memory Usage: 28kB
+                                                   Buffers: shared hit=4
+                                                   ->  Seq Scan on reservations reservation  (cost=0.00..9.00 rows=500 width=8) (actual time=0.002..0.025 rows=500.00 loops=1)
+                                                         Buffers: shared hit=4
+                                       ->  Hash  (cost=1.50..1.50 rows=50 width=17) (actual time=0.011..0.011 rows=50.00 loops=1)
+                                             Buckets: 1024  Batches: 1  Memory Usage: 11kB
+                                             Buffers: shared hit=1
+                                             ->  Seq Scan on restaurants restaurant  (cost=0.00..1.50 rows=50 width=17) (actual time=0.003..0.005 rows=50.00 loops=1)
+                                                   Buffers: shared hit=1
+ Planning:
+   Buffers: shared hit=50
+ Planning Time: 0.323 ms
+ Execution Time: 0.764 ms
+(62 rows)
+
