@@ -20,7 +20,7 @@ SELECT
     CONCAT (customer.first_name, ' ', customer.last_name) AS customer_name,
     -- restaurant info
     restaurant.restaurant_id,
-    restaurant.name AS restaurant_name,
+    restaurant.name AS restaurant_name
 FROM
     reservation_order_summary AS order_summary
     JOIN reservations AS reservation ON reservation.reservation_id = order_summary.reservation_id

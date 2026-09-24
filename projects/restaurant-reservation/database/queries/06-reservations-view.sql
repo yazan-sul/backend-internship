@@ -1,3 +1,4 @@
+CREATEOR REPLACE VIEW reservation_details AS
 SELECT
     reservation.reservation_id,
     reservation.reservation_date,
@@ -21,6 +22,4 @@ FROM
     -- Retrieve the restaurant where the reservation was made
     JOIN restaurants AS restaurant ON restaurant.restaurant_id = reservation.restaurant_id
     -- Retrieve the table assigned to the reservation
-    JOIN restaurant_tables AS restaurant_table ON restaurant_table.table_id = reservation.table_id
-ORDER BY
-    reservation.reservation_id;
+    JOIN restaurant_tables AS restaurant_table ON restaurant_table.table_id = reservation.table_id;
