@@ -14,7 +14,7 @@ Checked on 2026-09-24:
 - Installed SDK: .NET `10.0.400`.
 - SQL Server access and a Windows SSMS installation have not been verified.
 
-The project will be isolated on branch `restaurant-reservation-core`, based on the generic main scaffold. Existing ignored build folders from other branches may remain visible; they are not new project source and should not be deleted to make a directory listing look cleaner.
+Preparation created and pushed branch `restaurant-reservation-core` from `main` at `6670e90`, after fetching and confirming main matched origin/main. This is now the active branch. Existing ignored build folders from other branches may remain visible; they are not new project source and should not be deleted to make a directory listing look cleaner.
 
 ## SQL Server and SSMS on this machine
 

@@ -77,7 +77,7 @@ Each phase follows the same cycle: understand the concept, complete the first un
 - [x] Inspect both the existing project branch and the new-project guidance.
 - [x] Distinguish the PostgreSQL/raw-SQL exercise from this EF Core exercise.
 - [x] Prepare schema notes, setup instructions, seed expectations, and this plan.
-- [ ] Place documents on `restaurant-reservation-core`, review the exact diff, commit, and push.
+- [x] Place documents on `restaurant-reservation-core`, review the exact diff, commit, and push.
 - Completion: documentation is available on GitHub; coding has not started.
 - Commit: `docs: plan restaurant reservation EF Core exercise`.
 
@@ -254,5 +254,5 @@ Update this table only after verification; never mark future work complete based
 
 | Phase | Result | Commit / GitHub evidence |
 | --- | --- | --- |
-| 0 | Documents prepared; commit/push pending | Pending |
+| 0 | Complete: documentation checked, committed, and pushed; coding not started | [9897900](https://github.com/yazan-sul/backend-internship/commit/9897900) |
 | 1–18 | Not started | — |
