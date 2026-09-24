@@ -1,15 +1,28 @@
--- Requirement 9: Rank restaurants by reservation popularity.
+WITH
+    restaurant_totals AS (
+        SELECT
+            restaurant.restaurant_id,
+            restaurant.name AS restaurant_name,
+            COUNT(reservation.reservation_id) AS reservation_count
+        FROM
+            restaurants AS restaurant
+            LEFT JOIN reservations AS reservation ON reservation.restaurant_id = restaurant.restaurant_id
+        GROUP BY
+            restaurant.restaurant_id,
+            restaurant.name
+        ORDER BY
+            reservation_count DESC
+    )
 SELECT
-    restaurant.restaurant_id,
-    restaurant.name AS restaurant_name,
-    count(reservation.reservation_id) AS reservation_count,
-    count(DISTINCT reservation.customer_id) AS unique_customer_count,
-    coalesce(sum(reservation.party_size), 0) AS total_reserved_guests,
-    dense_rank() OVER (
-        ORDER BY count(reservation.reservation_id) DESC
+    restaurant_id,
+    restaurant_name,
+    reservation_count,
+    DENSE_RANK() OVER (
+        ORDER BY
+            reservation_count DESC
     ) AS popularity_rank
-FROM restaurants AS restaurant
-LEFT JOIN reservations AS reservation
-    ON reservation.restaurant_id = restaurant.restaurant_id
-GROUP BY restaurant.restaurant_id, restaurant.name
-ORDER BY popularity_rank, restaurant.name, restaurant.restaurant_id;
+FROM
+    restaurant_totals
+ORDER BY
+    popularity_rank,
+    restaurant_name;
