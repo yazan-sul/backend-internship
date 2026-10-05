@@ -185,7 +185,7 @@ WITH reservation_slots AS (
             + ((reservation_number - 5) * interval '14 days')
             + (interval '17 hours' + ((reservation_number % 3) * interval '1 hour'))
             AS reservation_date
-    FROM generate_series(1, 10) AS reservation_number
+    FROM generate_series(1, 12) AS reservation_number
 )
 INSERT INTO reservations (
     customer_id,
@@ -205,6 +205,8 @@ CROSS JOIN reservation_slots AS slot
 JOIN restaurant_tables AS restaurant_table
   ON restaurant_table.restaurant_id = restaurant.restaurant_id
  AND restaurant_table.table_number = slot.table_number
+-- Cycle through 8–12 reservations per restaurant (10 on average).
+WHERE slot.reservation_number <= 8 + ((restaurant.restaurant_id - 1) % 5)
 ORDER BY restaurant.restaurant_id, slot.reservation_number;
 
 WITH ranked_reservations AS (

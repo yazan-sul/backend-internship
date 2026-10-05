@@ -33,6 +33,17 @@ BEGIN
         RAISE EXCEPTION 'Expected 500 reservations, found %', actual_count;
     END IF;
 
+    SELECT count(DISTINCT reservation_count)
+    INTO actual_count
+    FROM (
+        SELECT count(*) AS reservation_count
+        FROM reservations
+        GROUP BY restaurant_id
+    ) AS restaurant_reservations;
+    IF actual_count <> 5 THEN
+        RAISE EXCEPTION 'Expected five distinct restaurant reservation counts, found %', actual_count;
+    END IF;
+
     SELECT count(*) INTO actual_count FROM customers;
     IF actual_count <> 400 THEN
         RAISE EXCEPTION 'Expected 400 customers, found %', actual_count;
@@ -192,4 +203,3 @@ SELECT 'customers', count(*) FROM customers
 UNION ALL
 SELECT 'restaurant_tables', count(*) FROM restaurant_tables
 ORDER BY entity;
-
