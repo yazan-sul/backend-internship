@@ -1,6 +1,6 @@
 # Setup and working guide
 
-Local project setup started on 2026-10-11 at the learner's request. The solution and both projects now exist. SDK `10.0.400`, EF Core SQL Server/Design packages `10.0.12`, and local `dotnet-ef` `10.0.12` are installed and verified. Database access remains unverified. The creation commands below are retained as a record; do not rerun them over the existing projects.
+Local setup is ready as of 2026-10-11. The solution, console, library, empty context, and design-time factory exist. SDK `10.0.400`, EF Core SQL Server/Design packages `10.0.12`, and local `dotnet-ef` `10.0.12` are installed and verified. Database access remains unverified. The learner starts with phase 5 entities and mappings. The creation commands below are retained as a record; do not rerun them over the existing projects.
 
 ## Current observations
 
@@ -33,7 +33,7 @@ Before phase 1, establish where Windows/SSMS and SQL Server are available. This 
 5. Leave its application tables empty. EF migrations create them in phase 6.
 6. Record a sanitized screenshot or short setup note with server version, database name, and verification date. Keep passwords and connection strings out of evidence.
 
-The application login needs appropriate schema-migration permissions during development and CRUD/query execution afterward. Store its connection string in a local environment variable named `ConnectionStrings__RestaurantReservationCore`, or use .NET user secrets once the console configuration is added. The design-time factory and runtime must use the same configuration key.
+The application login needs appropriate schema-migration permissions during development and CRUD/query execution afterward. Set its connection string in the environment variable `ConnectionStrings__RestaurantReservationCore`. Both runtime and the design-time factory read this exact variable through `DatabaseConfiguration`. User secrets and `.env` loading are not configured.
 
 Placeholder connection string shape (never commit actual values):
 
@@ -43,6 +43,16 @@ Server=<server>,<port>;Database=RestaurantReservationCore;User ID=<login>;Passwo
 
 Configure a trusted server certificate for normal use. If a personal development server uses a self-signed certificate, document any local-only certificate exception explicitly rather than hiding it in committed defaults. A `.env` file is not automatically loaded by .NET; use actual environment configuration unless a loader is deliberately added later.
 
+In an interactive zsh terminal, read the actual connection string without placing it in shell history (the prompt hides typing):
+
+```sh
+read -rs 'ConnectionStrings__RestaurantReservationCore?SQL Server connection string: '
+export ConnectionStrings__RestaurantReservationCore
+dotnet run --project src/RestaurantReservation -- --check-connection
+```
+
+This sets the value only for the current terminal and its child processes. The check returns exit code 0 for a successful connection and 1 for missing configuration or a failed connection. It does not create tables or apply migrations. The ordinary console command, without `--check-connection`, runs without configuration.
+
 ## .NET and EF Core
 
 Installed versions: SDK `10.0.400`; SQL Server provider, Design packages (library and startup console), and local `dotnet-ef` all `10.0.12`. Both Design references use `PrivateAssets=all`.
@@ -51,11 +61,11 @@ Use `./scripts/ef.sh` instead of bare `dotnet ef` on this Mac. The tool otherwis
 
 Use .NET 10 with EF Core 10: EF Core 10 requires .NET 10. See [Microsoft's EF Core 10 release documentation](https://learn.microsoft.com/en-us/ef/core/what-is-new/ef-core-10.0/whatsnew).
 
-When coding begins, add a project-local `global.json` matching the installed SDK, a local tool manifest, and exact matching stable EF Core 10 patch versions for `Microsoft.EntityFrameworkCore.SqlServer`, `Microsoft.EntityFrameworkCore.Design`, and `dotnet-ef`. Keep the Design package as a development dependency. Ensure the startup project provides the design package reference if required by tooling.
+The project-local `global.json` pins SDK `10.0.400` with latest-patch roll-forward. The local tool manifest is `.config/dotnet-tools.json`; package references are in each `.csproj`.
 
-### Future project-creation commands
+### Project-creation reference (already completed)
 
-Run from `projects/restaurant-reservation-core` when its phase is active, not all at once. Explicitly select `.sln` format because .NET 10 can otherwise produce `.slnx`.
+These commands were run from `projects/restaurant-reservation-core`. The solution explicitly uses `.sln` format.
 
 Phase 2:
 
@@ -75,7 +85,7 @@ dotnet add src/RestaurantReservation/RestaurantReservation.csproj reference src/
 dotnet new tool-manifest
 ```
 
-Install the EF dependencies/tool after choosing and recording the exact stable 10.0.x patch. Placeholder version commands are intentionally omitted so they are not mistaken for runnable commands.
+The EF dependencies and tool were then installed at `10.0.12`; the generated tool manifest was placed under `.config/`. The template `Class1.cs` was removed.
 
 ### Future migration commands
 
@@ -83,13 +93,15 @@ Run only after packages, context, models, design-time configuration, and the SSM
 
 ```sh
 dotnet tool restore
-dotnet ef dbcontext info --project src/RestaurantReservation.Db --startup-project src/RestaurantReservation --context RestaurantReservationDbContext
-dotnet ef migrations add InitialCreate --project src/RestaurantReservation.Db --startup-project src/RestaurantReservation --context RestaurantReservationDbContext --output-dir Migrations
-dotnet ef migrations script --project src/RestaurantReservation.Db --startup-project src/RestaurantReservation --context RestaurantReservationDbContext
-dotnet ef database update --project src/RestaurantReservation.Db --startup-project src/RestaurantReservation --context RestaurantReservationDbContext
+./scripts/ef.sh dbcontext info --project src/RestaurantReservation.Db --startup-project src/RestaurantReservation --context RestaurantReservationDbContext
+./scripts/ef.sh migrations add InitialCreate --project src/RestaurantReservation.Db --startup-project src/RestaurantReservation --context RestaurantReservationDbContext --output-dir Migrations
+./scripts/ef.sh migrations script --project src/RestaurantReservation.Db --startup-project src/RestaurantReservation --context RestaurantReservationDbContext
+./scripts/ef.sh database update --project src/RestaurantReservation.Db --startup-project src/RestaurantReservation --context RestaurantReservationDbContext
 ```
 
 Use the same project/startup/context options for later migrations. Do not use `EnsureCreated` as an alternative to this history. Rollback tests must target a separate, explicitly named disposable test database, never an existing project database.
+
+`dbcontext info` was verified with a non-secret placeholder connection string. It proves context discovery and SQL Server provider configuration, not server connectivity. No migrations have been generated or applied.
 
 ### Future daily commands
 

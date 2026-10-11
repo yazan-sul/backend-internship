@@ -121,3 +121,7 @@ Record actual checks here as implementation progresses. Expected numbers above a
 | 2026-09-24 | 0 | Fixture designed and arithmetic reviewed | No database created or runtime tests run |
 | 2026-10-11 | 2 | `dotnet run --project src/RestaurantReservation/RestaurantReservation.csproj` | Build succeeded; printed Hello, World! |
 | 2026-10-11 | 3 | Solution build and local tool installation | Both projects built with zero warnings/errors; EF SQL Server, Design and dotnet-ef pinned to 10.0.12 |
+| 2026-10-11 | 4 | Build and ordinary console run | Zero warnings/errors; prints the phase 5 starting instructions without requiring database access |
+| 2026-10-11 | 4 | `./scripts/ef.sh --version` and `dbcontext info` with an offline placeholder | Tool 10.0.12; discovers RestaurantReservationDbContext and SQL Server provider; no connection attempted |
+| 2026-10-11 | 4 | Connection check without environment variable; unknown CLI argument | Both exit 1 with an actionable message |
+| 2026-10-11 | 1 / 4 | Live SQL Server connection and SSMS database creation | Not verified; infrastructure details still needed |

@@ -108,11 +108,12 @@ Each phase follows the same cycle: understand the concept, complete the first un
 
 ### Phase 4 — Add the context (requirement 4)
 
-- [ ] Create `RestaurantReservationDbContext` in the library with options passed to its constructor.
-- [ ] Configure `UseSqlServer` through the console composition code and a design-time factory.
-- [ ] Read the connection string from environment configuration; fail clearly if missing.
-- [ ] Verify tooling discovers the context and connects to the intended database.
-- Completion: context discovery works without hardcoded credentials.
+- [x] Create `RestaurantReservationDbContext` in the library with options passed to its constructor.
+- [x] Configure `UseSqlServer` through shared `DatabaseConfiguration`, used by console composition and the design-time factory.
+- [x] Read the connection string from environment configuration; fail clearly if missing.
+- [x] Verify tooling discovers the context using an offline placeholder connection string (no database connection required).
+- [ ] Verify connection to the intended live database after phase 1 access is available.
+- Local setup is ready for phase 5; full completion still requires the live connection check. Entities and mappings are left for the learner.
 - Commit: `feat: configure RestaurantReservationDbContext`.
 
 ### Phase 5 — Model the eight tables (requirement 5)
@@ -257,5 +258,6 @@ Update this table only after verification; never mark future work complete based
 | 0 | Complete: documentation checked, committed, and pushed; coding not started | [9897900](https://github.com/yazan-sul/backend-internship/commit/9897900) |
 | 1 | Pending SQL Server/Windows SSMS access | No database created |
 | 2 | Complete: .NET 10 console builds and prints Hello, World! | `ef93e91`, pushed |
-| 3 | Verified: library reference, EF packages and tool `10.0.12`; solution builds without warnings | `feat: add RestaurantReservation.Db library` (push checkpoint pending) |
-| 4–18 | Not started | — |
+| 3 | Complete: library reference, EF packages and tool `10.0.12`; solution builds without warnings | `7b65d26`, pushed |
+| 4 | Local setup verified: build/run, context discovery, missing configuration and invalid argument checks. Live database check pending phase 1 | `feat: configure RestaurantReservationDbContext` |
+| 5–18 | Not started; phase 5 is the learner's next coding task | — |

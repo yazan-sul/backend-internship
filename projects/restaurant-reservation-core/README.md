@@ -1,6 +1,6 @@
 # RestaurantReservation — EF Core exercise
 
-Status: local setup in progress. The .NET 10 console project builds and runs. SQL Server/SSMS access remains unverified. Entities, mappings, migrations, and queries are reserved for the learner.
+Status: local setup is ready for phase 5. The .NET 10 console and library build, EF Core 10.0.12 tooling discovers the empty context, and connection configuration is wired. SQL Server/SSMS access remains unverified. Entities, mappings, migrations, and queries are reserved for you to write.
 
 Start with [plan.md](plan.md). It breaks the assignment into small phases, each with a completion check and a Git checkpoint. Work on one unchecked task at a time.
 
@@ -27,6 +27,29 @@ Repository guidance was reviewed in `ai_docs/NEW_PROJECT.md`, `TECH_STACK.md`, `
 
 The root landing-page launcher assumes a web project, a Bun package, and PostgreSQL. This console exercise will use direct `dotnet` commands. It has no landing-page integration planned, and requires no root tooling changes.
 
-## Next session
+## Run the prepared project
 
-Finish the local setup through phase 4, then begin writing entities and mappings in phase 5. Phase 1 still requires an accessible SQL Server and Windows SSMS installation. Do not assume the database already exists.
+From the repository root:
+
+```sh
+cd projects/restaurant-reservation-core
+dotnet tool restore
+dotnet restore RestaurantReservation.sln
+dotnet build RestaurantReservation.sln
+dotnet run --project src/RestaurantReservation
+./scripts/ef.sh --version
+```
+
+The default console command works without a database. Use `./scripts/ef.sh` for EF commands on this Mac; it handles the installed runtime architecture mismatch.
+
+## Your next task
+
+Start phase 5 with `Models/Restaurant.cs` in [RestaurantReservation.Db](src/RestaurantReservation.Db). Use [schema.md](docs/schema.md) to decide its properties. Then add its mapping under `Configurations/` and wire it into [RestaurantReservationDbContext.cs](src/RestaurantReservation.Db/RestaurantReservationDbContext.cs). The context is intentionally empty. Work through one entity at a time; no exercise implementations have been supplied.
+
+You can write and build the models now. Before applying migrations in phase 6, complete phase 1 using SQL Server and Windows SSMS, set the environment variable described in [setup.md](docs/setup.md), and verify access:
+
+```sh
+dotnet run --project src/RestaurantReservation -- --check-connection
+```
+
+This check only opens a connection; it does not create a database or tables. No live database connection has been verified yet.
