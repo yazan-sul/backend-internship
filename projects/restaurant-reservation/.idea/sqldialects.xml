@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="SqlDialectMappings">
+    <file url="file://$PROJECT_DIR$/database/new-queries/01.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/database/new-queries/02.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/database/new-queries/03.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/database/new-queries/04.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/database/new-queries/05.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/database/new-queries/06.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/database/new-queries/07.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/database/new-queries/08.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/database/new-queries/09.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/database/new-queries/10.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/database/new-queries/11.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/database/new-queries/12.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/database/new-queries/13.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/database/new-queries/14.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/database/new-queries/15.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/database/new-queries/16.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/database/query-plans/17-before-indexes.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/database/query-plans/19-after-indexes.sql" dialect="PostgreSQL" />
+  </component>
+</project>

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="DataSourcePerFileMappings">
+    <file url="file://$PROJECT_DIR$/database/new-queries/01.sql" value="02d5067d-b384-41f1-a7d4-3f7a0ce3e283" />
+    <file url="file://$PROJECT_DIR$/database/new-queries/02.sql" value="02d5067d-b384-41f1-a7d4-3f7a0ce3e283" />
+    <file url="file://$PROJECT_DIR$/database/new-queries/03.sql" value="02d5067d-b384-41f1-a7d4-3f7a0ce3e283" />
+    <file url="file://$PROJECT_DIR$/database/new-queries/04.sql" value="02d5067d-b384-41f1-a7d4-3f7a0ce3e283" />
+    <file url="file://$PROJECT_DIR$/database/new-queries/05.sql" value="02d5067d-b384-41f1-a7d4-3f7a0ce3e283" />
+    <file url="file://$PROJECT_DIR$/database/new-queries/06.sql" value="02d5067d-b384-41f1-a7d4-3f7a0ce3e283" />
+    <file url="file://$PROJECT_DIR$/database/new-queries/07.sql" value="02d5067d-b384-41f1-a7d4-3f7a0ce3e283" />
+    <file url="file://$PROJECT_DIR$/database/new-queries/08.sql" value="02d5067d-b384-41f1-a7d4-3f7a0ce3e283" />
+    <file url="file://$PROJECT_DIR$/database/new-queries/09.sql" value="02d5067d-b384-41f1-a7d4-3f7a0ce3e283" />
+    <file url="file://$PROJECT_DIR$/database/new-queries/10.sql" value="02d5067d-b384-41f1-a7d4-3f7a0ce3e283" />
+    <file url="file://$PROJECT_DIR$/database/new-queries/11.sql" value="02d5067d-b384-41f1-a7d4-3f7a0ce3e283" />
+    <file url="file://$PROJECT_DIR$/database/new-queries/12.sql" value="02d5067d-b384-41f1-a7d4-3f7a0ce3e283" />
+    <file url="file://$PROJECT_DIR$/database/new-queries/13.sql" value="02d5067d-b384-41f1-a7d4-3f7a0ce3e283" />
+    <file url="file://$PROJECT_DIR$/database/new-queries/14.sql" value="02d5067d-b384-41f1-a7d4-3f7a0ce3e283" />
+    <file url="file://$PROJECT_DIR$/database/new-queries/15.sql" value="02d5067d-b384-41f1-a7d4-3f7a0ce3e283" />
+    <file url="file://$PROJECT_DIR$/database/new-queries/16.sql" value="02d5067d-b384-41f1-a7d4-3f7a0ce3e283" />
+    <file url="file://$PROJECT_DIR$/database/query-plans/17-before-indexes.sql" value="02d5067d-b384-41f1-a7d4-3f7a0ce3e283" />
+    <file url="file://$PROJECT_DIR$/database/query-plans/19-after-indexes.sql" value="02d5067d-b384-41f1-a7d4-3f7a0ce3e283" />
+  </component>
+</project>
