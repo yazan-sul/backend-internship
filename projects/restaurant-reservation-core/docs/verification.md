@@ -120,3 +120,4 @@ Record actual checks here as implementation progresses. Expected numbers above a
 | --- | --- | --- | --- |
 | 2026-09-24 | 0 | Fixture designed and arithmetic reviewed | No database created or runtime tests run |
 | 2026-10-11 | 2 | `dotnet run --project src/RestaurantReservation/RestaurantReservation.csproj` | Build succeeded; printed Hello, World! |
+| 2026-10-11 | 3 | Solution build and local tool installation | Both projects built with zero warnings/errors; EF SQL Server, Design and dotnet-ef pinned to 10.0.12 |

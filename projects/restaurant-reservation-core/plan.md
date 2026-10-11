@@ -100,9 +100,9 @@ Each phase follows the same cycle: understand the concept, complete the first un
 
 ### Phase 3 — Add the class library (requirement 3)
 
-- [ ] Create `src/RestaurantReservation.Db` and add both projects to the solution.
-- [ ] Add console-to-library project reference.
-- [ ] Add aligned EF Core SQL Server/design dependencies and a project-local `dotnet-ef` tool.
+- [x] Create `src/RestaurantReservation.Db` and add both projects to the solution.
+- [x] Add console-to-library project reference.
+- [x] Add aligned EF Core SQL Server/design dependencies and a project-local `dotnet-ef` tool (all `10.0.12`).
 - Completion: restore/build succeeds; dependency direction is console → library.
 - Commit: `feat: add RestaurantReservation.Db library`.
 
@@ -256,5 +256,6 @@ Update this table only after verification; never mark future work complete based
 | --- | --- | --- |
 | 0 | Complete: documentation checked, committed, and pushed; coding not started | [9897900](https://github.com/yazan-sul/backend-internship/commit/9897900) |
 | 1 | Pending SQL Server/Windows SSMS access | No database created |
-| 2 | Verified: .NET 10 console builds and prints Hello, World! | `feat: create RestaurantReservation console project` (push checkpoint pending) |
-| 3–18 | Not started | — |
+| 2 | Complete: .NET 10 console builds and prints Hello, World! | `ef93e91`, pushed |
+| 3 | Verified: library reference, EF packages and tool `10.0.12`; solution builds without warnings | `feat: add RestaurantReservation.Db library` (push checkpoint pending) |
+| 4–18 | Not started | — |

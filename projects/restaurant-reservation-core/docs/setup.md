@@ -1,6 +1,6 @@
 # Setup and working guide
 
-These are instructions for future phases. No commands in this document have been run to create application projects, packages, or a database during preparation.
+Local project setup started on 2026-10-11 at the learner's request. The solution and both projects now exist. SDK `10.0.400`, EF Core SQL Server/Design packages `10.0.12`, and local `dotnet-ef` `10.0.12` are installed and verified. Database access remains unverified. The creation commands below are retained as a record; do not rerun them over the existing projects.
 
 ## Current observations
 
@@ -44,6 +44,10 @@ Server=<server>,<port>;Database=RestaurantReservationCore;User ID=<login>;Passwo
 Configure a trusted server certificate for normal use. If a personal development server uses a self-signed certificate, document any local-only certificate exception explicitly rather than hiding it in committed defaults. A `.env` file is not automatically loaded by .NET; use actual environment configuration unless a loader is deliberately added later.
 
 ## .NET and EF Core
+
+Installed versions: SDK `10.0.400`; SQL Server provider, Design packages (library and startup console), and local `dotnet-ef` all `10.0.12`. Both Design references use `PrivateAssets=all`.
+
+Use `./scripts/ef.sh` instead of bare `dotnet ef` on this Mac. The tool otherwise selects an installed x64 .NET 8 runtime that cannot load in the ARM64 process. The script sets `DOTNET_ROLL_FORWARD=LatestMajor` for the EF command only, using the working ARM64 .NET 10 runtime. Check with `./scripts/ef.sh --version`.
 
 Use .NET 10 with EF Core 10: EF Core 10 requires .NET 10. See [Microsoft's EF Core 10 release documentation](https://learn.microsoft.com/en-us/ef/core/what-is-new/ef-core-10.0/whatsnew).
 
