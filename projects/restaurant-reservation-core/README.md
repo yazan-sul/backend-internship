@@ -2,10 +2,11 @@
 
 Status: local setup is ready for phase 5. The .NET 10 console and library build, EF Core 10.0.12 tooling discovers the empty context, and connection configuration is wired. SQL Server/SSMS access remains unverified. Entities, mappings, migrations, and queries are reserved for you to write.
 
-Start with [plan.md](plan.md). It breaks the assignment into small phases, each with a completion check and a Git checkpoint. Work on one unchecked task at a time.
+Start with the [step-by-step coding guide](docs/coding-guide.md). It tells you which file to create, what class or method to write, and how to check each step. Use [plan.md](plan.md) to track phase completion and Git checkpoints.
 
 | Document | Purpose |
 | --- | --- |
+| [Step-by-step coding guide](docs/coding-guide.md) | Exact files, coding tasks, hints, and checks from your first entity to the final exercise |
 | [Implementation plan](plan.md) | Requirement coverage, phases, repository ownership, and completion criteria |
 | [Schema guide](docs/schema.md) | Every table and column from the supplied diagram, relationships, and explicit design assumptions |
 | [Setup guide](docs/setup.md) | .NET, SQL Server, SSMS on Windows, migration commands, and Git workflow |

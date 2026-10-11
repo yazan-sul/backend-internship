@@ -70,6 +70,8 @@ Keep migrations inside the library, including SQL for views, the database functi
 
 ## Phases and checkpoints
 
+For file-by-file learning instructions, follow [docs/coding-guide.md](docs/coding-guide.md). The guide starts at the current phase 5 handoff and leaves the implementations for the learner.
+
 Each phase follows the same cycle: understand the concept, complete the first unchecked task, check its result, update documentation, commit a focused change, push, and record the checkpoint. Do not begin another phase until the current phase is verified. A failed push is an unfinished checkpoint, not a reason to discard the local commit.
 
 ### Phase 0 — Preparation (this session)
