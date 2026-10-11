@@ -1,6 +1,6 @@
 # Seed fixture and verification guide
 
-This is a planned fixture, not seeded data yet. Small, fixed records make query results easy to calculate by hand. Seed with a migration using fixed IDs and dates; applying an already-applied migration again must not insert more rows.
+The `SeedSampleData` migration defines this fixture with fictional Palestinian names, restaurants, and dishes. Small, fixed records make query results easy to calculate by hand. Seed with a migration using fixed IDs and dates; applying an already-applied migration again must not insert more rows.
 
 ## Baseline rows
 
@@ -8,8 +8,8 @@ Use fictional names/contact information such as `customer1@example.test`. Popula
 
 | Table | Count | Proposed records |
 | --- | ---: | --- |
-| Restaurants | 5 | IDs 1–5, named Restaurant 1–5 |
-| Customers | 5 | IDs 1–5, unique fictional emails |
+| Restaurants | 5 | IDs 1–5: Dar Al-Zaytoun (Ramallah), Bayt Nablus (Nablus), Khalil Kitchen (Hebron), Yafa Bakery (Bethlehem), Jenin Sweets (Jenin) |
+| Customers | 5 | IDs 1–5: Yazan Sulaiman, Dalia Nassar, Omar Khalil, Lina Hamad, Rami Darwish; unique example.test emails |
 | Tables | 5 | IDs 1–5 belong to restaurant with the same ID; capacities 6, 4, 8, 2, 6 respectively |
 | Employees | 6 | See employee mapping below |
 | MenuItems | 6 | See menu mapping below |
@@ -28,12 +28,12 @@ Use fictional names/contact information such as `customer1@example.test`. Popula
 
 | Menu item ID | Restaurant | Demo name | Price |
 | ---: | ---: | --- | ---: |
-| 1 | 1 | Soup | 10.00 |
-| 2 | 1 | Pasta | 15.00 |
-| 3 | 2 | Grill | 20.00 |
-| 4 | 3 | Salad | 12.50 |
-| 5 | 4 | Sandwich | 8.00 |
-| 6 | 5 | Dessert | 9.00 |
+| 1 | 1 | Lentil Soup | 10.00 |
+| 2 | 1 | Musakhan | 15.00 |
+| 3 | 2 | Maqluba | 20.00 |
+| 4 | 3 | Fattoush | 12.50 |
+| 5 | 4 | Falafel Sandwich | 8.00 |
+| 6 | 5 | Nabulsi Knafeh | 9.00 |
 
 | Reservation ID | Customer | Restaurant / table | UTC start | Party size |
 | ---: | ---: | ---: | --- | ---: |
@@ -57,6 +57,14 @@ OrderItems IDs 1–7 follow the lines above from top to bottom. Give each order 
 
 ## Query expectations
 
+The current implementation uses `RestaurantTables` for the dining-table SQL table and `MenuItems.menu_item_id` for its primary key. Fixture inserts and verification use those actual names.
+
+To check the baseline fixture in the local Docker database:
+
+```sh
+docker compose exec -T sqlserver bash -c 'SQLCMDPASSWORD="$MSSQL_SA_PASSWORD" /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -C -b -d RestaurantReservationCore -i /dev/stdin' < scripts/verify-seed.sql
+```
+
 Compare sets or explicitly order by IDs; database result order is not implicit.
 
 | Exercise method / operation | Input | Expected baseline result |
@@ -64,9 +72,9 @@ Compare sets or explicitly order by IDs; database result order is not implicit.
 | ListManagers | — | Employee IDs 1, 3 |
 | GetReservationsByCustomer | Customer 1 | Reservation IDs 1, 2 |
 | GetReservationsByCustomer | Customer 999 | Empty list |
-| ListOrdersAndMenuItems | Reservation 1 | Order 1: Soup ×2 and Pasta ×1; Order 2: Soup ×1 |
+| ListOrdersAndMenuItems | Reservation 1 | Order 1: Lentil Soup ×2 and Musakhan ×1; Order 2: Lentil Soup ×1 |
 | ListOrdersAndMenuItems | Reservation 6 or 999 | Empty list |
-| ListOrderedMenuItems | Reservation 1 | Soup and Pasta, once each |
+| ListOrderedMenuItems | Reservation 1 | Lentil Soup and Musakhan, once each |
 | ListOrderedMenuItems | Reservation 6 or 999 | Empty list |
 | CalculateAverageOrderAmount | Employee 2 | (10 + 45) / 2 = 27.50 |
 | CalculateAverageOrderAmount | Employee 1 | 35.00 |
@@ -125,3 +133,6 @@ Record actual checks here as implementation progresses. Expected numbers above a
 | 2026-10-11 | 4 | `./scripts/ef.sh --version` and `dbcontext info` with an offline placeholder | Tool 10.0.12; discovers RestaurantReservationDbContext and SQL Server provider; no connection attempted |
 | 2026-10-11 | 4 | Connection check without environment variable; unknown CLI argument | Both exit 1 with an actionable message |
 | 2026-10-11 | 1 / 4 | Live SQL Server connection and SSMS database creation | Not verified; infrastructure details still needed |
+| 2026-10-11 | 7 | Build and apply SeedSampleData to local Docker SQL Server | Build passed with zero warnings/errors; migration applied successfully |
+| 2026-10-11 | 7 | scripts/verify-seed.sql | Counts 5/5/5/6/6/6/6/7; total 171.00; capacity, restaurant consistency, and line-total checks passed |
+| 2026-10-11 | 7 | Run database update again | No migrations applied; database already up to date |

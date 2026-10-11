@@ -1,6 +1,38 @@
 # Setup and working guide
 
-Local setup is ready as of 2026-10-11. The solution, console, library, empty context, and design-time factory exist. SDK `10.0.400`, EF Core SQL Server/Design packages `10.0.12`, and local `dotnet-ef` `10.0.12` are installed and verified. Database access remains unverified. The learner starts with phase 5 entities and mappings. The creation commands below are retained as a record; do not rerun them over the existing projects.
+The solution, console, library, entity mappings, and design-time factory exist. SDK `10.0.400`, EF Core SQL Server/Design packages `10.0.12`, and local `dotnet-ef` `10.0.12` are installed. The creation commands below are retained as a record; do not rerun them over the existing projects.
+
+## Local SQL Server in Docker
+
+The chosen local learning setup runs SQL Server 2022 Developer in Docker using `linux/amd64` emulation on this Apple Silicon Mac. Microsoft does not officially support this emulation setup. The assignment's separate SSMS requirement still requires Windows; DataGrip can manage the local database but does not satisfy an explicit SSMS requirement by itself.
+
+Run these commands from `projects/restaurant-reservation-core`:
+
+```sh
+docker compose up -d sqlserver
+docker compose ps
+```
+
+The generated, Git-ignored `.env` contains a random local administrator password and `ConnectionStrings__RestaurantReservationCore`. Keep it private. Docker Compose reads `.env` automatically; .NET does not, so use the wrapper below to load it for a command:
+
+```sh
+bash scripts/with-local-db.sh dotnet run --project src/RestaurantReservation -- --check-connection
+bash scripts/with-local-db.sh ./scripts/ef.sh dbcontext info --project src/RestaurantReservation.Db --startup-project src/RestaurantReservation --context RestaurantReservationDbContext
+```
+
+Verified on 2026-10-11: the container is healthy, the empty database exists, the application's actual connection check succeeds, and EF's model check succeeds with `localhost,14333`. The agent's sandbox required additional access for the live connection check. No entity tables or migrations were created by this setup.
+
+To create the empty database after SQL Server is healthy (safe to repeat):
+
+```sh
+docker compose exec -T sqlserver bash -c 'SQLCMDPASSWORD="$MSSQL_SA_PASSWORD" /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -C -b -i /dev/stdin' < scripts/create-local-database.sql
+```
+
+For DataGrip, use Microsoft SQL Server, host `localhost`, port `14333`, user `sa`, database `RestaurantReservationCore`, and the password from `.env`. This local-only setup trusts the container's self-signed certificate (`TrustServerCertificate=True`); it binds the port only to this Mac's loopback interface. Use trusted certificates and a dedicated application login for non-local environments.
+
+Database files persist in the Compose volume. `docker compose stop` stops the server; `docker compose up -d sqlserver` starts it again. Do not use `docker compose down -v` unless you intend to erase this project's database.
+
+Use the same `bash scripts/with-local-db.sh` prefix for future EF migration commands. No migrations are applied by the connection or model checks.
 
 ## Current observations
 
@@ -20,7 +52,7 @@ Preparation created and pushed branch `restaurant-reservation-core` from `main` 
 
 The assignment explicitly requires database creation using SSMS. SSMS runs on supported Windows systems; it is not a native macOS application. Use a Windows machine or persistent Windows VM with SSMS, connected to an accessible SQL Server. The console application can still be developed and run on the Mac. See [SSMS requirements](https://learn.microsoft.com/en-us/ssms/system-requirements).
 
-For this Apple Silicon Mac, do not assume a local SQL Server Docker container is the supported default: Microsoft supports SQL Server Linux containers on Intel/AMD x86-64 Linux hosts, not emulation such as Rosetta/QEMU. A remote supported SQL Server is the planned route. See [SQL Server container support](https://learn.microsoft.com/en-us/sql/linux/install-upgrade/quickstart-install-docker?view=sql-server-ver17).
+Microsoft supports SQL Server Linux containers on Intel/AMD x86-64 Linux hosts, not emulation such as Rosetta/QEMU. A remote supported SQL Server remains an alternative to the local Docker learning setup above. See [SQL Server container support](https://learn.microsoft.com/en-us/sql/linux/install-upgrade/quickstart-install-docker?view=sql-server-ver17).
 
 Before phase 1, establish where Windows/SSMS and SQL Server are available. This is an infrastructure decision, not a reason to substitute PostgreSQL or silently waive the SSMS requirement. No VM or cloud service needs to be purchased as part of this preparation.
 
