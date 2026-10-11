@@ -2,7 +2,7 @@
 
 ## Scope and working agreement
 
-Prepare first, then implement one task at a time. Phase 0 produces documentation only. All coding phases below are pending.
+Prepare first, then implement one task at a time. Phase 0 produced documentation only. On 2026-10-11, the learner requested setup through phase 4 so they can write the ORM exercise themselves starting at phase 5. Independent local setup can proceed while SQL Server/SSMS access is pending; database-dependent checks remain open.
 
 The deliverable is a .NET console application using an EF Core class library and SQL Server. Use the eight entities in the supplied diagram. Implement all 14 numbered requirements, call every public exercise method with sample data, and commit and push at the end of every completed phase.
 
@@ -12,7 +12,7 @@ No web frontend, API, authentication, audit table, salary function, performance-
 
 ## Planned structure
 
-Only README, this plan, and `docs/` exist in the preparation phase. Create the following code structure incrementally:
+Create the following code structure incrementally; the checkpoint record shows actual progress:
 
 ```text
 projects/restaurant-reservation-core/
@@ -92,9 +92,9 @@ Each phase follows the same cycle: understand the concept, complete the first un
 
 ### Phase 2 — Create the console application (requirement 2)
 
-- [ ] Add solution and project-local SDK configuration.
-- [ ] Create `src/RestaurantReservation` as a .NET console project.
-- [ ] Build and run the default program.
+- [x] Add solution and project-local SDK configuration.
+- [x] Create `src/RestaurantReservation` as a .NET console project.
+- [x] Build and run the default program.
 - Completion: the console runs using `net10.0`.
 - Commit: `feat: create RestaurantReservation console project`.
 
@@ -255,4 +255,6 @@ Update this table only after verification; never mark future work complete based
 | Phase | Result | Commit / GitHub evidence |
 | --- | --- | --- |
 | 0 | Complete: documentation checked, committed, and pushed; coding not started | [9897900](https://github.com/yazan-sul/backend-internship/commit/9897900) |
-| 1–18 | Not started | — |
+| 1 | Pending SQL Server/Windows SSMS access | No database created |
+| 2 | Verified: .NET 10 console builds and prints Hello, World! | `feat: create RestaurantReservation console project` (push checkpoint pending) |
+| 3–18 | Not started | — |

@@ -119,3 +119,4 @@ Record actual checks here as implementation progresses. Expected numbers above a
 | Date | Phase | Check | Actual result |
 | --- | --- | --- | --- |
 | 2026-09-24 | 0 | Fixture designed and arithmetic reviewed | No database created or runtime tests run |
+| 2026-10-11 | 2 | `dotnet run --project src/RestaurantReservation/RestaurantReservation.csproj` | Build succeeded; printed Hello, World! |

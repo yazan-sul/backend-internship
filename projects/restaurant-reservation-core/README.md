@@ -1,6 +1,6 @@
 # RestaurantReservation — EF Core exercise
 
-Status: planning only. No application code, database, migrations, or packages have been created in this phase.
+Status: local setup in progress. The .NET 10 console project builds and runs. SQL Server/SSMS access remains unverified. Entities, mappings, migrations, and queries are reserved for the learner.
 
 Start with [plan.md](plan.md). It breaks the assignment into small phases, each with a completion check and a Git checkpoint. Work on one unchecked task at a time.
 
@@ -29,4 +29,4 @@ The root landing-page launcher assumes a web project, a Bun package, and Postgre
 
 ## Next session
 
-Begin phase 1 in `plan.md`: identify an accessible SQL Server and Windows SSMS installation, then create the empty database in SSMS. Infrastructure access is still unverified. Do not assume the database already exists.
+Finish the local setup through phase 4, then begin writing entities and mappings in phase 5. Phase 1 still requires an accessible SQL Server and Windows SSMS installation. Do not assume the database already exists.
