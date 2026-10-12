@@ -1,6 +1,7 @@
 using System.Data.Common;
 using Microsoft.EntityFrameworkCore;
 using RestaurantReservation.Db;
+using RestaurantReservation.Demos;
 
 if (args.Length == 0)
 {
@@ -10,9 +11,39 @@ if (args.Length == 0)
     return 0;
 }
 
+if (args.Length == 1 && args[0] == "--demo-crud")
+{
+    try
+    {
+        await RestaurantCrudDemo.RunAsync();
+        return 0;
+    }
+    catch (Exception exception) when (exception is InvalidOperationException or DbUpdateException
+        or DbException or ArgumentException or OperationCanceledException)
+    {
+        Console.Error.WriteLine($"Restaurant CRUD demo failed: {exception.Message}");
+        return 1;
+    }
+}
+
+if (args.Length == 1 && args[0] == "--demo-cust")
+{
+    try
+    {
+        await CustomerCrudDemo.RunAsync();
+        return 0;
+    }
+    catch (Exception exception) when (exception is InvalidOperationException or DbUpdateException
+        or DbException or ArgumentException or OperationCanceledException)
+    {
+        Console.Error.WriteLine($"Restaurant CRUD demo failed: {exception.Message}");
+        return 1;
+    }
+}
+
 if (args.Length != 1 || args[0] != "--check-connection")
 {
-    Console.Error.WriteLine("Usage: dotnet run --project src/RestaurantReservation [-- --check-connection]");
+    Console.Error.WriteLine("Usage: dotnet run --project src/RestaurantReservation [-- --check-connection | --demo-crud]");
     return 1;
 }
 
