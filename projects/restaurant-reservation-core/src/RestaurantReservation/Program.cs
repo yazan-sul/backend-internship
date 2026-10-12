@@ -10,6 +10,11 @@ if (args.Length == 0)
     Console.WriteLine("To check SQL Server access, configure the environment variable in docs/setup.md and run with --check-connection.");
     return 0;
 }
+if (args.Length == 1 && args[0] == "--demo-queries")
+{
+    await QueryDemos.RunAsync();
+    return 0;
+}
 
 if (args.Length == 1 && args[0] == "--demo-crud")
 {
