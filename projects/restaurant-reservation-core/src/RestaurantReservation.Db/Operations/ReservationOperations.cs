@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using RestaurantReservation.Db.Models;
+using RestaurantReservation.Db.Results;
 
 namespace RestaurantReservation.Db.Operations
 {
@@ -20,5 +21,14 @@ namespace RestaurantReservation.Db.Operations
                 .Where(reservation => reservation.CustomerId == customerId)
                 .ToListAsync(cancellationToken);
         }
+        public async Task<List<ReservationDetails>> ListReservationFromViewAsync(
+            CancellationToken cancellationToken = default
+        )
+        {
+            return await _context.Set<ReservationDetails>()
+                .OrderBy(reservation => reservation.ReservationId)
+                .ToListAsync(cancellationToken);
+        }
+
     }
 }

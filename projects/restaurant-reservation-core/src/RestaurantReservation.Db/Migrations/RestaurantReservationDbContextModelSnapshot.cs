@@ -33,8 +33,8 @@ namespace RestaurantReservation.Db.Migrations
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)")
+                        .HasMaxLength(254)
+                        .HasColumnType("nvarchar(254)")
                         .HasColumnName("email")
                         .UseCollation("Latin1_General_100_CI_AS");
 
@@ -320,6 +320,88 @@ namespace RestaurantReservation.Db.Migrations
                         {
                             t.HasCheckConstraint("CK_Capacity", "[capacity] > 0");
                         });
+                });
+
+            modelBuilder.Entity("RestaurantReservation.Db.Results.EmployeeRestaurantDetails", b =>
+                {
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("FirstName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("LastName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Position")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("RestaurantAddress")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("RestaurantId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("RestaurantName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.ToTable((string)null);
+
+                    b.ToView("vw_EmployeeRestaurantDetails", "dbo");
+                });
+
+            modelBuilder.Entity("RestaurantReservation.Db.Results.ReservationDetails", b =>
+                {
+                    b.Property<string>("CustomerEmail")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CustomerFirstName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("CustomerId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("CustomerLastName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CustomerPhoneNumber")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("PartySize")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("ReservationDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("ReservationId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("RestaurantAddress")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("RestaurantId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("RestaurantName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("TableId")
+                        .HasColumnType("int");
+
+                    b.ToTable((string)null);
+
+                    b.ToView("vw_ReservationDetails", "dbo");
                 });
 
             modelBuilder.Entity("RestaurantReservation.Db.Models.Employee", b =>

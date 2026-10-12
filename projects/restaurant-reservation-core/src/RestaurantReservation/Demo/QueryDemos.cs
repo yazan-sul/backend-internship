@@ -11,7 +11,7 @@ public static class QueryDemos
         await using var context = new RestaurantReservationDbContext(
             DatabaseConfiguration.CreateOptions());
 
-        // var operations = new EmployeeOperations(context);
+        var operations = new EmployeeOperations(context);
         // var managers = await operations.ListManagersAsync(cancellationToken);
 
         // foreach (var manager in managers)
@@ -21,7 +21,7 @@ public static class QueryDemos
         // }
 
 
-        // var reservationOperations = new ReservationOperations(context);
+        var reservationOperations = new ReservationOperations(context);
         // var reservations = await reservationOperations
         //     .GetReservationsByCustomerAsync(1, cancellationToken);
 
@@ -31,7 +31,7 @@ public static class QueryDemos
         //         $"Reservation {reservation.ReservationId}: {reservation.ReservationDate}");
         // }
 
-        // var orderOperations = new OrderOperations(context);
+        var orderOperations = new OrderOperations(context);
         // var orders = await orderOperations.ListOrdersAndMenuItemsAsync(1, cancellationToken);
         // foreach (var order in orders)
         // {
@@ -56,10 +56,32 @@ public static class QueryDemos
         // }
 
         var employeeOperations = new EmployeeOperations(context);
-        var averageOrderAmount = await employeeOperations.CalculateAverageOrderAmountAsync(45, cancellationToken);
-        if (averageOrderAmount.HasValue)
+        // var averageOrderAmount = await employeeOperations.CalculateAverageOrderAmountAsync(45, cancellationToken);
+        // if (averageOrderAmount.HasValue)
+        // {
+        //     Console.WriteLine($"Average order amount for employee 1: {averageOrderAmount.Value}");
+        // }
+
+
+        // var details = await reservationOperations
+        //     .ListReservationFromViewAsync(cancellationToken);
+
+        // foreach (var reservation in details)
+        // {
+        //     Console.WriteLine(
+        //         $"{reservation.ReservationId}: " +
+        //         $"{reservation.CustomerFirstName} {reservation.CustomerLastName}, " +
+        //         $"{reservation.RestaurantName}, party of {reservation.PartySize}");
+        // }
+        var employeeDetails = await employeeOperations
+    .ListEmployeesWithRestaurantsAsync(cancellationToken);
+
+        foreach (var employee in employeeDetails)
         {
-            Console.WriteLine($"Average order amount for employee 1: {averageOrderAmount.Value}");
+            Console.WriteLine(
+                $"{employee.EmployeeId}: {employee.FirstName} {employee.LastName}, " +
+                $"{employee.Position}, {employee.RestaurantName}");
         }
+
     }
 }

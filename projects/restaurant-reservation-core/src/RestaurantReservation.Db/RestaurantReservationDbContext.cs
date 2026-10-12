@@ -27,6 +27,8 @@ public class RestaurantReservationDbContext(
         modelBuilder.ApplyConfiguration(new OrderConfiguration());
         modelBuilder.ApplyConfiguration(new ReservationConfiguration());
         modelBuilder.ApplyConfiguration(new OrderItemConfiguration());
+        modelBuilder.ApplyConfiguration(new ReservationDetailsConfiguration());
+        modelBuilder.ApplyConfiguration(new EmployeeRestaurantDetailsConfiguration());
     }
 
 

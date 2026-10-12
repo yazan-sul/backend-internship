@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using RestaurantReservation.Db.Models;
+using RestaurantReservation.Db.Results;
 
 namespace RestaurantReservation.Db.Operations;
 
@@ -44,4 +45,11 @@ public class EmployeeOperations
 
     }
 
+    public async Task<List<EmployeeRestaurantDetails>> ListEmployeesWithRestaurantsAsync(
+        CancellationToken cancellationToken = default)
+    {
+        return await _context.Set<EmployeeRestaurantDetails>()
+            .OrderBy(employee => employee.EmployeeId)
+            .ToListAsync(cancellationToken);
+    }
 }
