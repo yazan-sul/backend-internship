@@ -83,5 +83,17 @@ public static class QueryDemos
                 $"{employee.Position}, {employee.RestaurantName}");
         }
 
+        var restaurantOperations = new RestaurantOperations(context);
+
+        foreach (var restaurantId in new[] { 1, 5, 999 })
+        {
+            var revenue = await restaurantOperations
+                .CalculateRestaurantRevenueAsync(restaurantId, cancellationToken);
+
+            Console.WriteLine(
+                $"Restaurant {restaurantId} revenue: {revenue:F2}");
+        }
+
+
     }
 }

@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using RestaurantReservation.Db.Models;
 using RestaurantReservation.Db.Configurations;
+using RestaurantReservation.Db.Functions;
+
 namespace RestaurantReservation.Db;
 
 public class RestaurantReservationDbContext(
@@ -29,6 +31,12 @@ public class RestaurantReservationDbContext(
         modelBuilder.ApplyConfiguration(new OrderItemConfiguration());
         modelBuilder.ApplyConfiguration(new ReservationDetailsConfiguration());
         modelBuilder.ApplyConfiguration(new EmployeeRestaurantDetailsConfiguration());
+        modelBuilder
+            .HasDbFunction(typeof(RestaurantDbFunctions).GetMethod(
+            nameof(RestaurantDbFunctions.CalculateRestaurantRevenue),
+            new[] { typeof(int) })!)
+            .HasName("CalculateRestaurantRevenue")
+            .HasSchema("dbo");
     }
 
 

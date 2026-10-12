@@ -1,6 +1,7 @@
 using RestaurantReservation.Db.Models;
 using RestaurantReservation.Db.Requests;
-
+using RestaurantReservation.Db.Functions;
+using Microsoft.EntityFrameworkCore;
 namespace RestaurantReservation.Db.Operations
 {
     public class RestaurantOperations
@@ -90,6 +91,20 @@ namespace RestaurantReservation.Db.Operations
             await _context.SaveChangesAsync(cancellationToken);
             return true;
         }
+
+
+        public async Task<decimal> CalculateRestaurantRevenueAsync(
+            int restaurantId,
+            CancellationToken cancellationToken = default)
+        {
+            return await _context.Restaurants
+                .Where(restaurant => restaurant.RestaurantId == restaurantId)
+                .Select(restaurant =>
+                    RestaurantDbFunctions.CalculateRestaurantRevenue(
+                        restaurant.RestaurantId))
+                .SingleOrDefaultAsync(cancellationToken);
+        }
+
     }
 
 }
