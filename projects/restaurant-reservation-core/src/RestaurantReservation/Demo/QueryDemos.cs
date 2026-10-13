@@ -3,6 +3,11 @@ using RestaurantReservation.Db.Operations;
 
 namespace RestaurantReservation.Demos;
 
+
+
+// bash scripts/with-local-db.sh dotnet run \
+//   --project src/RestaurantReservation \
+//   -- --demo-queries
 public static class QueryDemos
 {
     public static async Task RunAsync(
@@ -73,27 +78,51 @@ public static class QueryDemos
         //         $"{reservation.CustomerFirstName} {reservation.CustomerLastName}, " +
         //         $"{reservation.RestaurantName}, party of {reservation.PartySize}");
         // }
-        var employeeDetails = await employeeOperations
-    .ListEmployeesWithRestaurantsAsync(cancellationToken);
+        //     var employeeDetails = await employeeOperations
+        // .ListEmployeesWithRestaurantsAsync(cancellationToken);
 
-        foreach (var employee in employeeDetails)
+        //     foreach (var employee in employeeDetails)
+        //     {
+        //         Console.WriteLine(
+        //             $"{employee.EmployeeId}: {employee.FirstName} {employee.LastName}, " +
+        //             $"{employee.Position}, {employee.RestaurantName}");
+        //     }
+
+        //     var restaurantOperations = new new RestaurantRepository(context);
+
+        //     foreach (var restaurantId in new[] { 1, 5, 999 })
+        //     {
+        //         var revenue = await restaurantOperations
+        //             .CalculateRestaurantRevenueAsync(restaurantId, cancellationToken);
+
+        //         Console.WriteLine(
+        //             $"Restaurant {restaurantId} revenue: {revenue:F2}");
+        //     }
+
+        var customerOperations = new CustomerOperations(context);
+
+        foreach (var minimumPartySize in new[] { 3, 4, 1, 6 })
         {
+            var customers = await customerOperations
+                .GetCustomersByMinimumPartySizeAsync(
+                    minimumPartySize, cancellationToken);
+
             Console.WriteLine(
-                $"{employee.EmployeeId}: {employee.FirstName} {employee.LastName}, " +
-                $"{employee.Position}, {employee.RestaurantName}");
+                $"Minimum {minimumPartySize}: " +
+                (customers.Count == 0
+                    ? "no customers"
+                    : string.Join(", ", customers.Select(c => c.CustomerId))));
         }
 
-        var restaurantOperations = new RestaurantOperations(context);
-
-        foreach (var restaurantId in new[] { 1, 5, 999 })
+        try
         {
-            var revenue = await restaurantOperations
-                .CalculateRestaurantRevenueAsync(restaurantId, cancellationToken);
-
-            Console.WriteLine(
-                $"Restaurant {restaurantId} revenue: {revenue:F2}");
+            await customerOperations
+                .GetCustomersByMinimumPartySizeAsync(-1, cancellationToken);
         }
-
+        catch (ArgumentOutOfRangeException exception)
+        {
+            Console.WriteLine($"Negative input rejected: {exception.Message}");
+        }
 
     }
 }

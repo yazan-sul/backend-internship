@@ -1,5 +1,7 @@
 using RestaurantReservation.Db.Models;
 using RestaurantReservation.Db.Requests;
+using Microsoft.EntityFrameworkCore;
+
 
 namespace RestaurantReservation.Db.Operations
 {
@@ -87,6 +89,27 @@ namespace RestaurantReservation.Db.Operations
             _context.Customers.Remove(customer);
             await _context.SaveChangesAsync(cancellationToken);
             return true;
+        }
+
+        public async Task<List<Customer>> GetCustomersByMinimumPartySizeAsync(
+            int minimumPartySize,
+            CancellationToken cancellationToken = default)
+        {
+            if (minimumPartySize < 0)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(minimumPartySize),
+                    "Minimum party size cannot be negative.");
+            }
+
+            var customers = await _context.Customers
+                .FromSqlInterpolated(
+                    $"EXEC dbo.GetCustomersByMinimumPartySize @MinimumPartySize = {minimumPartySize}")
+                .ToListAsync(cancellationToken);
+
+            return customers
+                .OrderBy(customer => customer.CustomerId)
+                .ToList();
         }
     }
 }

@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using RestaurantReservation.Db;
-using RestaurantReservation.Db.Operations;
+using RestaurantReservation.Db.Repositories;
 using RestaurantReservation.Db.Requests;
 
 namespace RestaurantReservation.Demos;
@@ -12,7 +12,7 @@ public static class RestaurantCrudDemo
         await using var context = new RestaurantReservationDbContext(DatabaseConfiguration.CreateOptions());
 
         await using var transaction = await context.Database.BeginTransactionAsync(cancellationToken);
-        var operations = new RestaurantOperations(context);
+        var operations = new RestaurantRepository(context);
 
         var created = await operations.CreateAsync(new CreateRestaurantRequest
         {

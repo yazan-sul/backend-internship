@@ -2,13 +2,13 @@ using RestaurantReservation.Db.Models;
 using RestaurantReservation.Db.Requests;
 using RestaurantReservation.Db.Functions;
 using Microsoft.EntityFrameworkCore;
-namespace RestaurantReservation.Db.Operations
+namespace RestaurantReservation.Db.Repositories
 {
-    public class RestaurantOperations
+    public class RestaurantRepository
     {
         private readonly RestaurantReservationDbContext _context;
 
-        public RestaurantOperations(RestaurantReservationDbContext context)
+        public RestaurantRepository(RestaurantReservationDbContext context)
         {
             _context = context;
         }
