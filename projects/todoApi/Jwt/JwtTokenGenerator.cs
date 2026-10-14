@@ -29,7 +29,7 @@ public class JwtTokenGenerator
         var expires = DateTime.UtcNow.AddHours(1);
         var token = new JwtSecurityToken(issuer, audience, claims, expires: expires, signingCredentials: credentials);
 
-        var tokenStr = new JwtSecurityTokenHandler().WriteToken(token);
+        var tokenStr = new JwtSecurityTokenHandler().WriteToken(token); // write token serialize token
         return tokenStr;
     }
 

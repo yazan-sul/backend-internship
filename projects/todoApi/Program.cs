@@ -15,27 +15,26 @@ builder.Services.AddOpenApiDocument(config =>
     config.Version = "v1";
 });
 
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        var secret = builder.Configuration["Jwt:Secret"]
-            ?? throw new InvalidOperationException("Set Jwt__Secret in .env or the environment.");
-        var keyStr = Convert.FromBase64String(secret);
-        var securityKey = new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(keyStr);
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
+{
+    var secret = builder.Configuration["Jwt:Secret"]
+        ?? throw new InvalidOperationException("Missing Secret.");
+    var keyStr = Convert.FromBase64String(secret);
+    var securityKey = new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(keyStr);
 
-        options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidIssuer = "TodoApi",
-            ValidateAudience = true,
-            ValidAudience = "TodoApiUsers",
-            ValidateLifetime = true,
-            RequireExpirationTime = true,
-            RequireSignedTokens = true,
-            ValidateIssuerSigningKey = true,
-            IssuerSigningKey = securityKey
-        };
-    });
+    options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidIssuer = "TodoApi",
+        ValidateAudience = true,
+        ValidAudience = "TodoApiUsers",
+        ValidateLifetime = true,
+        RequireExpirationTime = true,
+        RequireSignedTokens = true,
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = securityKey
+    };
+});
 
 builder.Services.AddAuthorization();
 
@@ -49,5 +48,15 @@ if (app.Environment.IsDevelopment())
 
 app.MapGet("/", () => "Hello World!").RequireAuthorization();
 
+app.MapPost("/login", (LoginRequest request, JwtTokenGenerator jwt) =>
+{
+    if (request.Username != "admin" || request.Password != "demo123")
+        return Results.Unauthorized();
+
+    var token = jwt.GenerateToken(request.Username);
+    return Results.Ok(new { token });
+}).AllowAnonymous();
 
 app.Run();
+
+record LoginRequest(string Username, string Password);
