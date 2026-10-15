@@ -14,26 +14,26 @@ builder.Services.AddOpenApiDocument(config =>
     config.Title = "TodoAPI v1";
     config.Version = "v1";
 });
+var secret = builder.Configuration["Jwt:Secret"]
+      ?? throw new InvalidOperationException("Missing Secret.");
+var keyStr = Convert.FromBase64String(secret);
+var securityKey = new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(keyStr);
 
+var validationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+{
+    ValidateIssuer = true,
+    ValidIssuer = "TodoApi",
+    ValidateAudience = true,
+    ValidAudience = "TodoApiUsers",
+    ValidateLifetime = true,
+    RequireExpirationTime = true,
+    RequireSignedTokens = true,
+    ValidateIssuerSigningKey = true,
+    IssuerSigningKey = securityKey
+};
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
 {
-    var secret = builder.Configuration["Jwt:Secret"]
-        ?? throw new InvalidOperationException("Missing Secret.");
-    var keyStr = Convert.FromBase64String(secret);
-    var securityKey = new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(keyStr);
-
-    options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
-    {
-        ValidateIssuer = true,
-        ValidIssuer = "TodoApi",
-        ValidateAudience = true,
-        ValidAudience = "TodoApiUsers",
-        ValidateLifetime = true,
-        RequireExpirationTime = true,
-        RequireSignedTokens = true,
-        ValidateIssuerSigningKey = true,
-        IssuerSigningKey = securityKey
-    };
+    options.TokenValidationParameters = validationParameters;
 });
 
 builder.Services.AddAuthorization();
