@@ -12,7 +12,7 @@ public static class ReservationEndpoints
 {
     public static void MapReservationEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/api/reservations");
+        var group = app.MapGroup("/api/reservations").WithTags("Reservations");
         group.MapGet("/", async (RestaurantReservationDbContext db) =>
         {
             var reservations = await db.Reservations
@@ -26,7 +26,8 @@ public static class ReservationEndpoints
                     DateTime.SpecifyKind(reservation.ReservationDate, DateTimeKind.Utc)))
                 .ToListAsync();
             return Results.Ok(reservations);
-        });
+        }).WithName("ListReservations")
+            .Produces<List<ReservationResponse>>();
 
         group.MapGet("/{id:int}", async (int id, RestaurantReservationDbContext db) =>
         {
@@ -46,7 +47,9 @@ public static class ReservationEndpoints
                 return Results.NotFound();
 
             return Results.Ok(reservation);
-        });
+        }).WithName("GetReservation")
+            .Produces<ReservationResponse>()
+            .Produces(404);
 
         group.MapGet("/details", async (RestaurantReservationDbContext db) =>
         {
@@ -56,7 +59,8 @@ public static class ReservationEndpoints
                 .ToListAsync();
 
             return Results.Ok(details);
-        });
+        }).WithName("GetReservationDetails")
+            .Produces<List<ReservationDetails>>();
 
         group.MapGet("/customer/{customerId:int}", async (int customerId, RestaurantReservationDbContext db) =>
         {
@@ -73,10 +77,22 @@ public static class ReservationEndpoints
                 .ToListAsync();
 
             return Results.Ok(reservations);
-        });
-        group.MapPost("/", CreateAsync);
-        group.MapPut("/{id:int}", UpdateAsync);
-        group.MapDelete("/{id:int}", DeleteAsync);
+        }).WithName("GetReservationsByCustomer")
+            .Produces<List<ReservationResponse>>();
+
+        group.MapPost("/", CreateAsync).WithName("CreateReservation")
+            .Produces<ReservationResponse>(201)
+            .ProducesValidationProblem()
+            .ProducesProblem(409);
+        group.MapPut("/{id:int}", UpdateAsync).WithName("UpdateReservation")
+            .Produces(204)
+            .ProducesValidationProblem()
+            .Produces(404)
+            .ProducesProblem(409);
+        group.MapDelete("/{id:int}", DeleteAsync).WithName("DeleteReservation")
+            .Produces(204)
+            .Produces(404)
+            .ProducesProblem(409);
     }
 
     private static async Task<IResult> UpdateAsync(
