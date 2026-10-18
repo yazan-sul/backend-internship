@@ -1,0 +1,39 @@
+@host = http://localhost:5008
+
+GET {{host}}/api/reservations
+
+###
+GET {{host}}/api/reservations/1
+
+###
+GET {{host}}/api/reservations/customer/1
+
+###
+GET {{host}}/api/reservations/details
+
+### Create; replace 0 in later requests with the returned reservationId.
+POST {{host}}/api/reservations
+Content-Type: application/json
+
+{
+  "customerId": 1,
+  "restaurantId": 1,
+  "tableId": 1,
+  "partySize": 2,
+  "reservationDate": "2027-01-20T18:00:00Z"
+}
+
+### Update
+PUT {{host}}/api/reservations/0
+Content-Type: application/json
+
+{
+  "customerId": 1,
+  "restaurantId": 1,
+  "tableId": 1,
+  "partySize": 2,
+  "reservationDate": "2027-01-20T19:00:00Z"
+}
+
+### Delete
+DELETE {{host}}/api/reservations/0
