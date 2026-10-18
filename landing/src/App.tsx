@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { z } from "zod";
 
+const stack = ["React + TypeScript", "ASP.NET Core", "PostgreSQL", "Docker"];
 const CONTROL_URL = import.meta.env.VITE_WORKSPACE_CONTROL_URL ?? "http://127.0.0.1:5090";
 const pendingBranchKey = "backend-internship.pending-branch";
 const localControlEnabled = import.meta.env.DEV;
@@ -142,6 +143,10 @@ export function App() {
       <section className="relative m-auto w-full max-w-5xl">
         <p className="text-sm font-bold uppercase tracking-[0.3em] text-cyan-300">Backend Internship</p>
         <h1 className="mt-6 max-w-4xl text-5xl font-black leading-tight sm:text-7xl">One foundation. A branch for every project.</h1>
+        <p className="mt-7 max-w-2xl text-lg leading-8 text-slate-300">A focused workspace for learning production-minded backend development without coupling one project to the next.</p>
+        <div className="mt-8 flex flex-wrap gap-3">
+          {stack.map((item) => <span key={item} className="rounded-full border border-slate-700 bg-slate-900/80 px-4 py-2 text-sm text-slate-200">{item}</span>)}
+        </div>
 
         {(workspace?.dirty || workspaceError || workspace?.lastError) && (
           <div className="mt-8 rounded-xl border border-amber-400/40 bg-amber-400/10 px-4 py-3 text-sm text-amber-100" role="status">
