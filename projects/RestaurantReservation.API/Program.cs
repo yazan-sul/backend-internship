@@ -5,12 +5,16 @@ using RestaurantReservation.API.Endpoints;
 using RestaurantReservation.API.Errors;
 using RestaurantReservation.API.Validators;
 using RestaurantReservation.Db;
+using RestaurantReservation.Db.Operations;
 
 var builder = WebApplication.CreateBuilder(args);
 
 
 builder.Services.AddOpenApi();
 builder.Services.AddScoped<IValidator<ReservationRequest>, ReservationRequestValidator>();
+builder.Services.AddScoped<EmployeeOperations>();
+builder.Services.AddScoped<OrderOperations>();
+builder.Services.AddScoped<MenuItemOperations>();
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<ApiExceptionHandler>();
 // Send JSON binding failures through the same handler in every environment.
@@ -36,6 +40,7 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.MapReservationEndpoints();
+app.MapEmployeeEndpoints();
 
 app.Run();
 

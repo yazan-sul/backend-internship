@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using RestaurantReservation.API.Contracts;
 using RestaurantReservation.Db;
 using RestaurantReservation.Db.Models;
+using RestaurantReservation.Db.Operations;
 using RestaurantReservation.Db.Results;
 
 namespace RestaurantReservation.API.Endpoints;
@@ -79,6 +80,21 @@ public static class ReservationEndpoints
             return Results.Ok(reservations);
         }).WithName("GetReservationsByCustomer")
             .Produces<List<ReservationResponse>>();
+
+        group.MapGet("/{reservationId:int}/orders", GetOrdersAsync)
+            .WithName("GetReservationOrders")
+            .WithSummary("List a reservation's orders with their menu items and quantities.")
+            .Produces<List<OrderResponse>>()
+            .ProducesValidationProblem()
+            .ProducesProblem(404);
+
+        group.MapGet("/{reservationId:int}/menu-items", GetMenuItemsAsync)
+            .WithName("GetReservationMenuItems")
+            .WithSummary("List distinct menu items ordered for a reservation.")
+            .WithDescription("Returns menu items ordered by price descending.")
+            .Produces<List<MenuItemResponse>>()
+            .ProducesValidationProblem()
+            .ProducesProblem(404);
 
         group.MapPost("/", CreateAsync).WithName("CreateReservation")
             .Produces<ReservationResponse>(201)
@@ -225,5 +241,50 @@ public static class ReservationEndpoints
             reservation.ReservationDate);
 
         return Results.Created($"/api/reservations/{reservation.ReservationId}", response);
+    }
+
+    private static async Task<IResult> GetOrdersAsync(
+        int reservationId, RestaurantReservationDbContext db,
+        OrderOperations operations, CancellationToken ct)
+    {
+        if (reservationId <= 0)
+            return Results.ValidationProblem(new Dictionary<string, string[]>
+            { ["reservationId"] = ["Reservation ID must be greater than zero."] });
+
+        if (!await db.Reservations.AnyAsync(reservation => reservation.ReservationId == reservationId, ct))
+            return Results.Problem(statusCode: 404, title: "Reservation not found.",
+                detail: $"Reservation {reservationId} does not exist.");
+
+        var orders = await operations.ListOrdersAndMenuItemsAsync(reservationId, ct);
+        var response = orders.Select(order => new OrderResponse(
+            order.OrderId, order.ReservationId, order.EmployeeId, order.OrderDate, order.TotalAmount,
+            order.OrderItems.OrderBy(item => item.OrderItemId).Select(item => new OrderItemResponse(
+                item.OrderItemId, item.Quantity, new MenuItemResponse(
+                    item.MenuItem.MenuItemId, item.MenuItem.RestaurantId,
+                    item.MenuItem.Name, item.MenuItem.Description, item.MenuItem.Price)))
+                .ToList()))
+            .ToList();
+
+        return Results.Ok(response);
+    }
+
+    private static async Task<IResult> GetMenuItemsAsync(
+        int reservationId, RestaurantReservationDbContext db,
+        MenuItemOperations operations, CancellationToken ct)
+    {
+        if (reservationId <= 0)
+            return Results.ValidationProblem(new Dictionary<string, string[]>
+            { ["reservationId"] = ["Reservation ID must be greater than zero."] });
+
+        if (!await db.Reservations.AnyAsync(reservation => reservation.ReservationId == reservationId, ct))
+            return Results.Problem(statusCode: 404, title: "Reservation not found.",
+                detail: $"Reservation {reservationId} does not exist.");
+
+        var menuItems = await operations.ListOrderedMenuItemsAsync(reservationId, ct);
+        var response = menuItems.Select(item => new MenuItemResponse(
+            item.MenuItemId, item.RestaurantId, item.Name, item.Description, item.Price))
+            .ToList();
+
+        return Results.Ok(response);
     }
 }

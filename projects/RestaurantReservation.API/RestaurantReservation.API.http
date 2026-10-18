@@ -11,6 +11,18 @@ GET {{host}}/api/reservations/customer/1
 ###
 GET {{host}}/api/reservations/details
 
+### List managers
+GET {{host}}/api/employees/managers
+
+### Orders with menu items; replace 1 with an existing reservation ID.
+GET {{host}}/api/reservations/1/orders
+
+### Distinct ordered menu items
+GET {{host}}/api/reservations/1/menu-items
+
+### Average order amount; replace 1 with an existing employee ID.
+GET {{host}}/api/employees/1/average-order-amount
+
 ### Create; replace 0 in later requests with the returned reservationId.
 POST {{host}}/api/reservations
 Content-Type: application/json
