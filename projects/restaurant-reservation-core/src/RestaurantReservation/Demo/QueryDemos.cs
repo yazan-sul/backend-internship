@@ -1,0 +1,128 @@
+using RestaurantReservation.Db;
+using RestaurantReservation.Db.Operations;
+
+namespace RestaurantReservation.Demos;
+
+
+
+// bash scripts/with-local-db.sh dotnet run \
+//   --project src/RestaurantReservation \
+//   -- --demo-queries
+public static class QueryDemos
+{
+    public static async Task RunAsync(
+        CancellationToken cancellationToken = default)
+    {
+        await using var context = new RestaurantReservationDbContext(
+            DatabaseConfiguration.CreateOptions());
+
+        var operations = new EmployeeOperations(context);
+        // var managers = await operations.ListManagersAsync(cancellationToken);
+
+        // foreach (var manager in managers)
+        // {
+        //     Console.WriteLine(
+        //         $"{manager.EmployeeId}: {manager.FirstName} {manager.LastName}");
+        // }
+
+
+        var reservationOperations = new ReservationOperations(context);
+        // var reservations = await reservationOperations
+        //     .GetReservationsByCustomerAsync(1, cancellationToken);
+
+        // foreach (var reservation in reservations)
+        // {
+        //     Console.WriteLine(
+        //         $"Reservation {reservation.ReservationId}: {reservation.ReservationDate}");
+        // }
+
+        var orderOperations = new OrderOperations(context);
+        // var orders = await orderOperations.ListOrdersAndMenuItemsAsync(1, cancellationToken);
+        // foreach (var order in orders)
+        // {
+        //     Console.WriteLine($"Order {order.OrderId}: date {order.OrderDate}");
+
+        //     foreach (var item in order.OrderItems)
+        //     {
+        //         Console.WriteLine(
+        //             $" Item {item.ItemId}:  {item.MenuItem.Name}, quantity {item.Quantity}, price {item.MenuItem.Price}");
+        //     }
+
+        //     if (order.OrderItems.Count == 0)
+        //     {
+        //         Console.WriteLine("  No items.");
+        //     }
+        // }
+        // var MenuItemOperations = new MenuItemOperations(context);
+        // var menuItems = await MenuItemOperations.ListOrderedMenuItemsAsync(1, cancellationToken);
+        // foreach (var menuItem in menuItems)
+        // {
+        //     Console.WriteLine($"Menu Item {menuItem.MenuItemId}: {menuItem.Name}, price {menuItem.Price}");
+        // }
+
+        var employeeOperations = new EmployeeOperations(context);
+        // var averageOrderAmount = await employeeOperations.CalculateAverageOrderAmountAsync(45, cancellationToken);
+        // if (averageOrderAmount.HasValue)
+        // {
+        //     Console.WriteLine($"Average order amount for employee 1: {averageOrderAmount.Value}");
+        // }
+
+
+        // var details = await reservationOperations
+        //     .ListReservationFromViewAsync(cancellationToken);
+
+        // foreach (var reservation in details)
+        // {
+        //     Console.WriteLine(
+        //         $"{reservation.ReservationId}: " +
+        //         $"{reservation.CustomerFirstName} {reservation.CustomerLastName}, " +
+        //         $"{reservation.RestaurantName}, party of {reservation.PartySize}");
+        // }
+        //     var employeeDetails = await employeeOperations
+        // .ListEmployeesWithRestaurantsAsync(cancellationToken);
+
+        //     foreach (var employee in employeeDetails)
+        //     {
+        //         Console.WriteLine(
+        //             $"{employee.EmployeeId}: {employee.FirstName} {employee.LastName}, " +
+        //             $"{employee.Position}, {employee.RestaurantName}");
+        //     }
+
+        //     var restaurantOperations = new new RestaurantRepository(context);
+
+        //     foreach (var restaurantId in new[] { 1, 5, 999 })
+        //     {
+        //         var revenue = await restaurantOperations
+        //             .CalculateRestaurantRevenueAsync(restaurantId, cancellationToken);
+
+        //         Console.WriteLine(
+        //             $"Restaurant {restaurantId} revenue: {revenue:F2}");
+        //     }
+
+        var customerOperations = new CustomerOperations(context);
+
+        foreach (var minimumPartySize in new[] { 3, 4, 1, 6 })
+        {
+            var customers = await customerOperations
+                .GetCustomersByMinimumPartySizeAsync(
+                    minimumPartySize, cancellationToken);
+
+            Console.WriteLine(
+                $"Minimum {minimumPartySize}: " +
+                (customers.Count == 0
+                    ? "no customers"
+                    : string.Join(", ", customers.Select(c => c.CustomerId))));
+        }
+
+        try
+        {
+            await customerOperations
+                .GetCustomersByMinimumPartySizeAsync(-1, cancellationToken);
+        }
+        catch (ArgumentOutOfRangeException exception)
+        {
+            Console.WriteLine($"Negative input rejected: {exception.Message}");
+        }
+
+    }
+}
